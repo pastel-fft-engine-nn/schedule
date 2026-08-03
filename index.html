@@ -1,1338 +1,1282 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>Mini4WD Hyper RPM Analyzer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>スケジュール</title>
   <style>
-    :root {
-      --bg: #f5f7fc;
-      --card-bg: #ffffff;
-      --accent-blue: #1f7aff;
-      --accent-red: #ff4b4b;
-      --accent-gray: #cfd3dd;
-      --text-main: #1b1e27;
-      --text-sub: #7b8190;
-      --border-soft: #e1e4ee;
-      --radius-lg: 18px;
-      --radius-md: 14px;
-      --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.06);
-    }
-
     * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "Helvetica Neue", Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      margin: 0;
-      padding: 0;
-      background: radial-gradient(circle at top, #ffffff 0, #eef2fb 45%, #e3e7f7 100%);
-      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #f2f2f7;
+      color: #000;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    .app-shell {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 12px 10px 24px;
+    /* ===== 共通ヘッダー ===== */
+    .app-header {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 10px 12px 0;
     }
 
-    header {
+    .header-row {
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .today-btn {
+      background: none;
+      border: none;
+      color: #007aff;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .month-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 10px;
     }
 
-    .app-title {
-      font-size: 1.15rem;
+    .month-label {
+      font-size: 20px;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: -0.4px;
     }
 
-    .app-subtitle {
-      font-size: 0.75rem;
-      color: var(--text-sub);
-    }
-
-    .header-right {
+    .nav-arrows {
       display: flex;
-      gap: 8px;
+      gap: 16px;
     }
 
-    .icon-button {
-      width: 36px;
-      height: 36px;
-      border-radius: 999px;
-      border: 1px solid var(--border-soft);
-      background: var(--card-bg);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+    .nav-btn {
+      background: none;
+      border: none;
+      color: #007aff;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 2px 8px;
+      line-height: 1;
+    }
+
+    /* ビュー切替タブ */
+    .view-tabs {
+      display: flex;
+      background: #e5e5ea;
+      border-radius: 9px;
+      padding: 2px;
+      margin-bottom: 10px;
+    }
+
+    .view-tab {
+      flex: 1;
+      text-align: center;
+      padding: 7px 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: #3a3a3c;
+      border: none;
+      background: transparent;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .view-tab.active {
+      background: #fff;
+      color: #000;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      font-weight: 600;
+    }
+
+    /* ===== 月間ビュー ===== */
+    .weekday-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 4px 4px 2px;
+      background: #fff;
+    }
+
+    .weekday {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: #8e8e93;
+      padding: 4px 0;
+    }
+
+    .weekday.sun { color: #ff3b30; }
+    .weekday.sat { color: #007aff; }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: #fff;
+      padding: 0 2px 8px;
+      gap: 0;
+    }
+
+    .day-cell {
+      min-height: 92px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 2px 6px;
+      cursor: pointer;
+      border-radius: 8px;
+      margin: 1px;
+      transition: background 0.12s;
+      overflow: hidden;
+    }
+
+    .day-cell:active {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .day-number {
+      font-size: 15px;
+      font-weight: 400;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      border-radius: 50%;
+      line-height: 1;
+      flex-shrink: 0;
     }
 
-    .icon-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+    .day-cell.other-month .day-number {
+      color: #c7c7cc;
     }
 
-    .icon-button span {
-      font-size: 1.1rem;
+    .day-cell.sunday .day-number { color: #ff3b30; }
+    .day-cell.saturday .day-number { color: #007aff; }
+    .day-cell.other-month.sunday .day-number,
+    .day-cell.other-month.saturday .day-number {
+      color: #c7c7cc;
     }
 
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-soft);
-      padding: 12px 12px 14px;
-      border: 1px solid rgba(255, 255, 255, 0.9);
-      margin-bottom: 10px;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 8px;
-    }
-
-    .card-title {
-      font-size: 0.9rem;
+    .day-cell.today .day-number {
+      background: #007aff;
+      color: #fff !important;
       font-weight: 600;
-      letter-spacing: 0.04em;
     }
 
-    .card-caption {
-      font-size: 0.75rem;
-      color: var(--text-sub);
-    }
-
-    /* リアルタイム計測 */
-    .wave-container {
-      background: linear-gradient(145deg, #f9fbff, #eef2ff);
-      border-radius: var(--radius-md);
-      padding: 8px 8px 12px;
-      border: 1px solid #dde3f5;
-      position: relative;
+    .day-events {
+      width: 100%;
+      margin-top: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
       overflow: hidden;
-      margin-bottom: 8px;
     }
 
-    .wave-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-      font-size: 0.8rem;
-      color: var(--text-sub);
+    .day-event-name {
+      font-size: 9px;
+      line-height: 1.25;
+      color: #007aff;
+      background: rgba(0, 122, 255, 0.1);
+      border-radius: 3px;
+      padding: 1px 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+      max-width: 100%;
     }
 
-    canvas#waveform {
-      width: 100%;
-      height: 100px;
-      border-radius: 12px;
-      background: radial-gradient(circle at top, #ffffff 0, #e3e9ff 60%, #d6defa 100%);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
-    }
-
-    .wave-axis-rpm {
-      position: absolute;
-      inset: auto 8px 4px 8px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.7rem;
-      color: #a0a6ba;
-      pointer-events: none;
-    }
-
-    .realtime-stats {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 6px;
-      font-size: 0.8rem;
-      margin-bottom: 4px;
-    }
-
-    .stat-block {
-      background: #f6f7fc;
-      border-radius: 12px;
-      padding: 6px 6px;
-      border: 1px solid #e3e6f4;
-    }
-
-    .stat-label {
-      color: var(--text-sub);
-      margin-bottom: 2px;
-    }
-
-    .stat-value {
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .realtime-center {
+    .day-event-name.more {
+      color: #8e8e93;
+      background: transparent;
+      font-size: 8px;
       text-align: center;
-      margin: 6px 0 10px;
-      font-size: 0.8rem;
-      color: var(--accent-blue);
-      letter-spacing: 0.12em;
     }
 
-    .realtime-center span {
+    /* 今日のスケジュール（カレンダー下） */
+    .today-section {
+      background: #fff;
+      margin-top: 10px;
+      border-radius: 12px 12px 0 0;
+      padding: 14px 16px 20px;
+      min-height: 120px;
+    }
+
+    .today-section-title {
+      font-size: 15px;
       font-weight: 600;
-    }
-
-    .realtime-buttons {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 10px;
+      color: #3a3a3c;
+      display: flex;
+      align-items: center;
       gap: 6px;
     }
 
-    .primary-btn,
-    .secondary-btn {
-      border-radius: 999px;
-      padding: 7px 0;
-      font-size: 0.8rem;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+    .today-section-title span {
+      color: #007aff;
+      font-weight: 500;
+      font-size: 13px;
     }
 
-    .primary-btn.blue {
-      background: linear-gradient(135deg, #2a8bff, #1f7aff);
-      color: #ffffff;
-    }
-
-    .primary-btn.red {
-      background: linear-gradient(135deg, #ff6b6b, #ff4b4b);
-      color: #ffffff;
-    }
-
-    .secondary-btn.gray {
-      background: #eef1f8;
-      color: #4b5160;
-    }
-
-    .secondary-btn.outline {
-      background: #ffffff;
-      color: var(--accent-blue);
-      border: 1px solid #c9d5ff;
-    }
-
-    .primary-btn:hover,
-    .secondary-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.08);
-    }
-
-    /* 計測条件 */
-    .settings-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    .setting-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 0.8rem;
-    }
-
-    .setting-label {
-      color: var(--text-sub);
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-
-    .setting-value {
-      font-size: 0.75rem;
-      color: var(--accent-blue);
-    }
-
-    input[type="range"] {
-      width: 100%;
-      -webkit-appearance: none;
-      height: 6px;
-      border-radius: 999px;
-      background: #e3e7f5;
-      outline: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #ffffff;
-      border: 2px solid var(--accent-blue);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-      cursor: pointer;
-    }
-
-    input[type="range"]::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #ffffff;
-      border: 2px solid var(--accent-blue);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-      cursor: pointer;
-    }
-
-    /* 比較表（トップ） */
-    .table-wrapper {
-      margin-top: 4px;
-      border-radius: var(--radius-md);
-      border: 1px solid #dde2f2;
+    /* ===== 週間ビュー ===== */
+    .week-view {
+      display: none;
+      background: #fff;
       overflow-x: auto;
-      overflow-y: auto;
-      max-height: 220px;
-      background: #f9fbff;
+      -webkit-overflow-scrolling: touch;
     }
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      min-width: 640px;
-      font-size: 0.8rem;
-    }
+    .week-view.active { display: block; }
 
-    thead {
-      background: #e6ecff;
+    .week-header {
+      display: grid;
+      grid-template-columns: 48px repeat(7, 1fr);
+      border-bottom: 0.5px solid #e5e5ea;
       position: sticky;
       top: 0;
-      z-index: 3;
+      background: #fff;
+      z-index: 10;
     }
 
-    th,
-    td {
-      padding: 5px 6px;
-      border-bottom: 1px solid #dde2f2;
+    .week-day-header {
+      text-align: center;
+      padding: 8px 2px;
+      border-left: 0.5px solid #e5e5ea;
+    }
+
+    .week-day-name {
+      font-size: 11px;
+      color: #8e8e93;
+    }
+
+    .week-day-num {
+      font-size: 18px;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .week-day-header.today .week-day-num {
+      background: #007aff;
+      color: #fff;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 2px auto 0;
+    }
+
+    .week-day-header.sunday .week-day-name,
+    .week-day-header.sunday .week-day-num { color: #ff3b30; }
+    .week-day-header.saturday .week-day-name,
+    .week-day-header.saturday .week-day-num { color: #007aff; }
+    .week-day-header.today.sunday .week-day-num,
+    .week-day-header.today.saturday .week-day-num { color: #fff; }
+
+    .week-body {
+      display: grid;
+      grid-template-columns: 48px repeat(7, 1fr);
+      position: relative;
+    }
+
+    .time-labels {
+      border-right: 0.5px solid #e5e5ea;
+    }
+
+    .time-label {
+      height: 48px;
+      font-size: 11px;
+      color: #8e8e93;
       text-align: right;
-      white-space: nowrap;
+      padding-right: 6px;
+      padding-top: 0;
+      line-height: 1;
+      position: relative;
+      top: -6px;
     }
 
-    th:first-child,
-    th:nth-child(2),
-    td:first-child,
-    td:nth-child(2) {
-      position: sticky;
+    .week-columns {
+      display: contents;
+    }
+
+    .week-col {
+      border-left: 0.5px solid #e5e5ea;
+      position: relative;
+      height: calc(48px * 15); /* 7:00〜21:00 = 15時間 */
+    }
+
+    .hour-line {
+      position: absolute;
       left: 0;
-      background: #f3f6ff;
+      right: 0;
+      height: 0.5px;
+      background: #e5e5ea;
+    }
+
+    .week-event {
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      background: rgba(0, 122, 255, 0.85);
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 4px;
+      font-size: 10px;
+      overflow: hidden;
+      cursor: pointer;
       z-index: 2;
-      text-align: left;
+      line-height: 1.2;
     }
 
-    /* 電圧・モーターRPMの幅を半分に */
-    th:first-child,
-    td:first-child {
-      min-width: 60px;
-    }
-    th:nth-child(2),
-    td:nth-child(2) {
-      min-width: 60px;
-      left: 60px;
+    .week-event-title {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    tbody tr:nth-child(even) {
-      background: #f5f7ff;
+    /* ===== 1日ビュー ===== */
+    .day-view {
+      display: none;
+      background: #f2f2f7;
+      min-height: calc(100vh - 140px);
+      padding-bottom: 80px;
     }
 
-    /* モーダル共通 */
-    .modal-backdrop {
+    .day-view.active { display: block; }
+
+    .day-view-date {
+      background: #fff;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-weight: 600;
+      border-bottom: 0.5px solid rgba(0,0,0,0.08);
+    }
+
+    .events-list {
+      padding: 12px 16px;
+    }
+
+    .event-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+    }
+
+    .event-card:active { transform: scale(0.985); }
+
+    .event-time {
+      font-size: 13px;
+      color: #8e8e93;
+      margin-bottom: 4px;
+    }
+
+    .event-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .event-address {
+      font-size: 14px;
+      color: #007aff;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .event-content {
+      font-size: 14px;
+      color: #3a3a3c;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    .event-media {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+
+    .event-media img,
+    .event-media video {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: #8e8e93;
+    }
+
+    .empty-state p {
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    /* FAB */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 18px;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #007aff;
+      color: #fff;
+      border: none;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0, 122, 255, 0.4);
+      cursor: pointer;
+      z-index: 50;
+      line-height: 1;
+    }
+
+    .fab:active { transform: scale(0.92); }
+
+    /* ===== モーダル ===== */
+    .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.18);
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 200;
       display: none;
       align-items: flex-end;
       justify-content: center;
-      z-index: 20;
     }
 
+    .modal-overlay.active { display: flex; }
+
     .modal {
+      background: #f2f2f7;
       width: 100%;
-      max-width: 480px;
-      background: #f5f7fc;
-      border-radius: 18px 18px 0 0;
-      box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.18);
-      padding: 12px 10px 16px;
+      max-width: 500px;
+      border-radius: 14px 14px 0 0;
+      max-height: 92vh;
+      overflow-y: auto;
+      animation: slideUp 0.28s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      padding: 14px 16px;
+      background: #fff;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 5;
     }
 
     .modal-title {
-      font-size: 0.9rem;
+      font-size: 17px;
       font-weight: 600;
-      letter-spacing: 0.04em;
     }
 
-    .modal-close {
+    .modal-close, .modal-save {
+      background: none;
       border: none;
-      background: transparent;
-      font-size: 1.2rem;
+      color: #007aff;
+      font-size: 16px;
       cursor: pointer;
-    }
-
-    /* 履歴 */
-    .history-list {
-      border-radius: var(--radius-md);
-      border: 1px solid #dde2f2;
-      background: #f9fbff;
-      max-height: 220px;
-      overflow: auto;
-      font-size: 0.8rem;
-      margin-top: 4px;
-    }
-
-    .history-block {
-      border-bottom: 1px solid #dde2f2;
       padding: 4px 6px;
-      background: #ffffff;
     }
 
-    .history-block:nth-child(even) {
-      background: #f5f7ff;
+    .modal-save { font-weight: 600; }
+
+    .form-group {
+      background: #fff;
+      margin: 12px 16px;
+      border-radius: 12px;
+      overflow: hidden;
     }
 
-    .history-row-top,
-    .history-row-bottom {
-      display: grid;
-      grid-template-columns: 70px 90px 60px 70px 70px 50px 50px;
-      gap: 4px;
+    .form-row {
+      display: flex;
       align-items: center;
+      padding: 12px 16px;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.07);
     }
 
-    .history-row-bottom {
-      margin-top: 2px;
+    .form-row:last-child { border-bottom: none; }
+
+    .form-label {
+      width: 64px;
+      font-size: 15px;
+      color: #3a3a3c;
+      flex-shrink: 0;
     }
 
-    .history-header-top,
-    .history-header-bottom {
-      display: grid;
-      grid-template-columns: 70px 90px 60px 70px 70px 50px 50px;
-      gap: 4px;
-      padding: 4px 6px;
-      background: #e6ecff;
-      font-weight: 600;
-    }
-
-    .history-header-bottom {
-      border-bottom: 1px solid #dde2f2;
-    }
-
-    .history-label {
-      color: var(--text-sub);
-      font-size: 0.75rem;
-    }
-
-    .delete-btn,
-    .reflect-btn {
-      width: 24px;
-      height: 24px;
-      border-radius: 999px;
+    .form-input {
+      flex: 1;
       border: none;
+      font-size: 16px;
+      background: transparent;
+      outline: none;
+      color: #000;
+    }
+
+    .form-input::placeholder { color: #c7c7cc; }
+
+    textarea.form-input {
+      min-height: 72px;
+      resize: none;
+      padding: 2px 0;
+    }
+
+    .media-section {
+      padding: 8px 16px 16px;
+    }
+
+    .media-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .media-btn {
+      flex: 1;
+      padding: 13px 8px;
+      border: none;
+      border-radius: 11px;
+      background: #fff;
+      font-size: 14px;
+      color: #007aff;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.85rem;
+      gap: 5px;
+      font-weight: 500;
+    }
+
+    .media-btn:active {
+      background: #e8e8ed;
+    }
+
+    .media-preview {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .media-item {
+      position: relative;
+      width: 76px;
+      height: 76px;
+    }
+
+    .media-item img,
+    .media-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .media-remove {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ff3b30;
+      color: #fff;
+      border: none;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .delete-btn {
-      background: #ffe5e5;
-      color: #ff4b4b;
+      width: calc(100% - 32px);
+      margin: 8px 16px 24px;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #fff;
+      color: #ff3b30;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
     }
 
-    .delete-btn:hover {
-      background: #ffd0d0;
-    }
+    /* ビュー表示制御 */
+    .month-view { display: none; }
+    .month-view.active { display: block; }
 
-    .reflect-btn {
-      background: #e3f1ff;
-      color: #1f7aff;
-    }
-
-    .reflect-btn:hover {
-      background: #c9e3ff;
-    }
-
-    .history-filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 4px;
-      margin-bottom: 4px;
-      font-size: 0.8rem;
-    }
-
-    .filter-group {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: var(--text-sub);
-    }
-
-    select {
-      border-radius: 999px;
-      border: 1px solid #d5dbf0;
-      padding: 3px 8px;
-      font-size: 0.8rem;
-      background: #ffffff;
-      color: var(--text-main);
-      outline: none;
-    }
-
-    /* 履歴用比較表 */
-    .history-table-wrapper {
-      margin-top: 4px;
-      border-radius: var(--radius-md);
-      border: 1px solid #dde2f2;
-      overflow-x: auto;
-      max-height: 200px;
-      background: #f9fbff;
-      font-size: 0.8rem;
-    }
-
-    .history-table-wrapper table {
-      min-width: 640px;
-    }
-
-    .history-table-wrapper th:first-child,
-    .history-table-wrapper td:first-child {
-      min-width: 60px;
-    }
-    .history-table-wrapper th:nth-child(2),
-    .history-table-wrapper td:nth-child(2) {
-      min-width: 60px;
+    @media (min-width: 600px) {
+      body {
+        max-width: 430px;
+        margin: 0 auto;
+        border-left: 1px solid #e5e5ea;
+        border-right: 1px solid #e5e5ea;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- ヘッダー -->
-    <header>
-      <div>
-        <div class="app-title">RPM Analyzer</div>
-        <div class="app-subtitle">Mini4WD Hyper RPM Analyzer</div>
+  <!-- ヘッダー（共通） -->
+  <div class="app-header">
+    <div class="header-row">
+      <div class="header-title">スケジュール</div>
+      <button class="today-btn" onclick="goToToday()">今日</button>
+    </div>
+    <div class="month-nav">
+      <div class="month-label" id="periodLabel">2026年8月</div>
+      <div class="nav-arrows">
+        <button class="nav-btn" onclick="navigate(-1)">‹</button>
+        <button class="nav-btn" onclick="navigate(1)">›</button>
       </div>
-      <div class="header-right">
-        <button class="icon-button" id="historyIcon" title="履歴">
-          <span>📄</span>
-        </button>
-        <button class="icon-button" id="settingsIcon" title="設定">
-          <span>⚙️</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- リアルタイム計測 -->
-    <section class="card" aria-label="リアルタイム計測エリア">
-      <div class="card-header">
-        <div class="card-title">リアルタイム計測</div>
-        <div class="card-caption">モーター音からRPMと速度を解析</div>
-      </div>
-
-      <div class="wave-container">
-        <div class="wave-header">
-          <span>波形グラフ</span>
-          <span id="waveStatusLabel">STANDBY</span>
-        </div>
-        <canvas id="waveform"></canvas>
-        <div class="wave-axis-rpm">
-          <span>0</span>
-          <span>5000</span>
-          <span>10000</span>
-          <span>20000</span>
-          <span>30000</span>
-          <span>40000</span>
-          <span>50000</span>
-        </div>
-      </div>
-
-      <div class="history-label" style="margin-bottom:4px;">RPM</div>
-      <div class="realtime-stats">
-        <div class="stat-block">
-          <div class="stat-label">平均RPM</div>
-          <div class="stat-value" id="avgRpm">0</div>
-        </div>
-        <div class="stat-block">
-          <div class="stat-label">最高RPM</div>
-          <div class="stat-value" id="maxRpm">0</div>
-        </div>
-        <div class="stat-block">
-          <div class="stat-label">最低RPM</div>
-          <div class="stat-value" id="minRpm">0</div>
-        </div>
-      </div>
-
-      <div class="history-label" style="margin:6px 0 4px;">速度</div>
-      <div class="realtime-stats">
-        <div class="stat-block">
-          <div class="stat-label">平均速度</div>
-          <div class="stat-value" id="avgSpeed">0.00 km/h</div>
-        </div>
-        <div class="stat-block">
-          <div class="stat-label">最高速度</div>
-          <div class="stat-value" id="maxSpeed">0.00 km/h</div>
-        </div>
-        <div class="stat-block">
-          <div class="stat-label">最低速度</div>
-          <div class="stat-value" id="minSpeed">0.00 km/h</div>
-        </div>
-      </div>
-
-      <div class="realtime-center">
-        <span id="standbyText">STANDBY</span> — 計測待機中
-      </div>
-
-      <div class="realtime-buttons">
-        <button class="primary-btn blue" id="startBtn">計測開始</button>
-        <button class="secondary-btn gray" id="lockBtn">ロック</button>
-        <button class="primary-btn blue" id="saveBtn">保存</button>
-        <button class="secondary-btn outline" id="resetBtn">リセット</button>
-      </div>
-    </section>
-
-    <!-- 計測条件 -->
-    <section class="card" aria-label="計測条件">
-      <div class="card-header">
-        <div class="card-title">計測条件</div>
-        <div class="card-caption">電圧・ギヤ比・タイヤ径</div>
-      </div>
-      <div class="settings-row">
-        <div class="setting-item">
-          <div class="setting-label">
-            <span>電圧 (V)</span>
-            <span class="setting-value" id="voltageLabel">2.8 V</span>
-          </div>
-          <input type="range" id="voltageRange" min="2.2" max="3.4" step="0.1" value="2.8" />
-        </div>
-        <div class="setting-item">
-          <div class="setting-label">
-            <span>ギヤ比</span>
-            <span class="setting-value" id="gearLabel">3.5:1</span>
-          </div>
-          <input type="range" id="gearRange" min="0" max="7" step="1" value="0" />
-        </div>
-        <div class="setting-item">
-          <div class="setting-label">
-            <span>タイヤ径 (mm)</span>
-            <span class="setting-value" id="tireLabel">26.0 mm</span>
-          </div>
-          <input type="range" id="tireRange" min="22.0" max="40.0" step="0.1" value="26.0" />
-        </div>
-      </div>
-    </section>
-
-    <!-- 比較表（トップ画面） -->
-    <section class="card" aria-label="比較表">
-      <div class="card-header">
-        <div class="card-title">比較表</div>
-        <div class="card-caption">ロック時点の条件から算出</div>
-      </div>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>電圧</th>
-              <th>モーターRPM</th>
-              <th>3.5:1 km/h</th>
-              <th>3.7:1 km/h</th>
-              <th>4.0:1 km/h</th>
-              <th>4.2:1 km/h</th>
-              <th>5.0:1 km/h</th>
-              <th>6.4:1 km/h</th>
-              <th>8.75:1 km/h</th>
-              <th>11.2:1 km/h</th>
-            </tr>
-          </thead>
-          <tbody id="comparisonBody">
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-
-  <!-- 設定モーダル（音声解析設定） -->
-  <div class="modal-backdrop" id="settingsModalBackdrop">
-    <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title">音声解析設定</div>
-        <button class="modal-close" id="settingsClose">×</button>
-      </div>
-      <div class="card" style="margin-bottom:6px;">
-        <div class="card-header">
-          <div class="card-title">解析パラメータ</div>
-          <div class="card-caption">ノイズ・極数・校正</div>
-        </div>
-        <div class="settings-row">
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>ノイズ閾値 (dB)</span>
-              <span class="setting-value" id="noiseLabel">-100 dB</span>
-            </div>
-            <input type="range" id="noiseRange" min="-120" max="-80" step="2" value="-100" />
-          </div>
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>モーター極数</span>
-              <span class="setting-value" id="poleMotorLabel">1</span>
-            </div>
-            <input type="range" id="motorPoleRange" min="1" max="4" step="1" value="1" />
-          </div>
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>ポール数</span>
-              <span class="setting-value" id="poleCountLabel">1</span>
-            </div>
-            <input type="range" id="poleCountRange" min="1" max="3" step="1" value="1" />
-          </div>
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>RPM校正係数</span>
-              <span class="setting-value" id="rpmCalLabel">1.00</span>
-            </div>
-            <input type="range" id="rpmCalRange" min="0.8" max="1.2" step="0.01" value="1.00" />
-          </div>
-        </div>
-      </div>
+    </div>
+    <div class="view-tabs">
+      <button class="view-tab active" data-view="month" onclick="switchView('month')">月</button>
+      <button class="view-tab" data-view="week" onclick="switchView('week')">週</button>
+      <button class="view-tab" data-view="day" onclick="switchView('day')">日</button>
     </div>
   </div>
 
-  <!-- 履歴モーダル -->
-  <div class="modal-backdrop" id="historyModalBackdrop">
+  <!-- ===== 月間ビュー ===== -->
+  <div class="month-view active" id="monthView">
+    <div class="weekday-header">
+      <div class="weekday sun">日</div>
+      <div class="weekday">月</div>
+      <div class="weekday">火</div>
+      <div class="weekday">水</div>
+      <div class="weekday">木</div>
+      <div class="weekday">金</div>
+      <div class="weekday sat">土</div>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+
+    <!-- 今日のスケジュール -->
+    <div class="today-section">
+      <div class="today-section-title">
+        今日の予定
+        <span id="todayDateLabel"></span>
+      </div>
+      <div id="todayEventsList"></div>
+    </div>
+  </div>
+
+  <!-- ===== 週間ビュー ===== -->
+  <div class="week-view" id="weekView">
+    <div class="week-header" id="weekHeader"></div>
+    <div class="week-body" id="weekBody"></div>
+  </div>
+
+  <!-- ===== 1日ビュー ===== -->
+  <div class="day-view" id="dayView">
+    <div class="day-view-date" id="dayViewDate"></div>
+    <div class="events-list" id="dayEventsList"></div>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" onclick="openAddModal()">＋</button>
+
+  <!-- 予定追加・編集モーダル -->
+  <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">計測履歴</div>
-        <button class="modal-close" id="historyClose">×</button>
+        <button class="modal-close" onclick="closeModal()">キャンセル</button>
+        <div class="modal-title" id="modalTitle">新規予定</div>
+        <button class="modal-save" onclick="saveEvent()">追加</button>
       </div>
 
-      <div class="card" style="margin-bottom:6px;">
-        <div class="card-header">
-          <div class="card-title">フィルタ</div>
-          <div class="card-caption">モーター名・電圧・ギヤ比・タイヤ径</div>
+      <div class="form-group">
+        <div class="form-row">
+          <div class="form-label">タイトル</div>
+          <input type="text" class="form-input" id="eventTitle" placeholder="予定の名前">
         </div>
-        <div class="history-filters">
-          <div class="filter-group">
-            <span>モーター名</span>
-            <select id="filterMotor">
-              <option value="">すべて</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <span>電圧</span>
-            <select id="filterVoltage">
-              <option value="">すべて</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <span>ギヤ比</span>
-            <select id="filterGear">
-              <option value="">すべて</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <span>タイヤ径</span>
-            <select id="filterTire">
-              <option value="">すべて</option>
-            </select>
-          </div>
+        <div class="form-row">
+          <div class="form-label">日付</div>
+          <input type="date" class="form-input" id="eventDate">
+        </div>
+        <div class="form-row">
+          <div class="form-label">開始</div>
+          <input type="time" class="form-input" id="eventStart" value="09:00">
+        </div>
+        <div class="form-row">
+          <div class="form-label">終了</div>
+          <input type="time" class="form-input" id="eventEnd" value="10:00">
+        </div>
+        <div class="form-row">
+          <div class="form-label">住所</div>
+          <input type="text" class="form-input" id="eventAddress" placeholder="住所を入力">
         </div>
       </div>
 
-      <div class="card" style="margin-bottom:6px;">
-        <div class="card-header">
-          <div class="card-title">全体計測履歴一覧</div>
-          <div class="card-caption">二段構成で1モーターを表示</div>
-        </div>
-        <div class="history-list" id="historyList">
+      <div class="form-group">
+        <div class="form-row" style="align-items: flex-start;">
+          <div class="form-label" style="padding-top: 4px;">内容</div>
+          <textarea class="form-input" id="eventContent" placeholder="メモ"></textarea>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">履歴用比較表</div>
-          <div class="card-caption">反映ボタンで選択した履歴を表示</div>
+      <div class="media-section">
+        <div class="media-buttons">
+          <button type="button" class="media-btn" onclick="capturePhoto()">📷 写真を撮る</button>
+          <button type="button" class="media-btn" onclick="captureVideo()">🎥 動画を撮る</button>
+          <button type="button" class="media-btn" onclick="selectFile()">📁 選択</button>
         </div>
-        <div class="history-table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>モーター名</th>
-                <th>電圧</th>
-                <th>モーターRPM</th>
-                <th>3.5:1</th>
-                <th>3.7:1</th>
-                <th>4.0:1</th>
-                <th>4.2:1</th>
-                <th>5.0:1</th>
-                <th>6.4:1</th>
-                <th>8.75:1</th>
-                <th>11.2:1</th>
-              </tr>
-            </thead>
-            <tbody id="historyComparisonBody">
-            </tbody>
-          </table>
-        </div>
+        <div class="media-preview" id="mediaPreview"></div>
+        <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFiles(event)">
       </div>
+
+      <button class="delete-btn" id="deleteBtn" style="display:none" onclick="deleteEvent()">予定を削除</button>
     </div>
   </div>
 
   <script>
-    // --- WebAudio + FFT ---
-    let audioContext = null;
-    let analyser = null;
-    let micStream = null;
-    const fftSize = 2048;
-    const freqData = new Float32Array(fftSize);
+    // ===== 状態 =====
+    let currentDate = new Date();
+    let selectedDate = new Date();
+    let currentView = 'month'; // month | week | day
+    let editingEventId = null;
+    let tempMedia = [];
 
-    async function startAudio() {
-      if (audioContext) return;
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      analyser = audioContext.createAnalyser();
-      analyser.fftSize = fftSize;
-      analyser.smoothingTimeConstant = 0.6;
-
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const source = audioContext.createMediaStreamSource(micStream);
-      source.connect(analyser);
+    // ===== データ =====
+    function getEvents() {
+      try {
+        return JSON.parse(localStorage.getItem('schedule_events') || '[]');
+      } catch { return []; }
     }
 
-    function stopAudio() {
-      if (micStream) {
-        micStream.getTracks().forEach(t => t.stop());
-        micStream = null;
-      }
-      if (audioContext) {
-        audioContext.close();
-        audioContext = null;
-        analyser = null;
-      }
+    function saveEvents(events) {
+      localStorage.setItem('schedule_events', JSON.stringify(events));
     }
 
-    function getPeakFrequency() {
-  if (!analyser) return 0;
-
-  analyser.getFloatFrequencyData(freqData);
-
-  // 1. 上位ピークを複数取得
-  const peaks = [];
-  for (let i = 1; i < freqData.length - 1; i++) {
-    if (
-      freqData[i] > freqData[i - 1] &&
-      freqData[i] > freqData[i + 1] &&
-      freqData[i] > -120   // ノイズ除外
-    ) {
-      peaks.push({ index: i, value: freqData[i] });
-    }
-  }
-
-  if (peaks.length === 0) return 0;
-
-  // 2. 強いピーク順にソート
-  peaks.sort((a, b) => b.value - a.value);
-
-  // 3. 上位 5 個だけ使う
-  const top = peaks.slice(0, 5);
-
-  // 4. 基本周波数候補を作る（f のみ）
-  const sampleRate = audioContext.sampleRate;
-  const candidates = top.map(p => p.index * sampleRate / fftSize);
-
-  // 5. Mini4WD モーターの基本周波数帯（300〜1500Hz）に絞る
-  const valid = candidates.filter(f => f >= 300 && f <= 1500);
-  if (valid.length === 0) return 0;
-
-  // 6. その中で最も低い基本周波数を返す
-  return Math.min(...valid);
-}
-
-
-function computeRpmFromFreq(freq) {
-  const motorPoles = Number(motorPoleRange.value);
-  const poleCount = Number(poleCountRange.value);
-  const cal = Number(rpmCalRange.value);
-  if (motorPoles <= 0 || poleCount <= 0) return 0;
-  const rpm = freq * 60 / (motorPoles * poleCount) * cal;
-  return rpm;
-}
-
-
-    // --- 波形ダミーアニメーション（RPM反映） ---
-    const canvas = document.getElementById("waveform");
-    const ctx = canvas.getContext("2d");
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
-    }
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-
-    let wavePhase = 0;
-    let measuring = false;
-    let lockedStats = false;
-
-    const voltageRange = document.getElementById("voltageRange");
-    const voltageLabel = document.getElementById("voltageLabel");
-
-    const gearRange = document.getElementById("gearRange");
-    const gearLabel = document.getElementById("gearLabel");
-    const gearOptions = ["3.5:1", "3.7:1", "4.0:1", "4.2:1", "5.0:1", "6.4:1", "8.75:1", "11.2:1"];
-
-    const tireRange = document.getElementById("tireRange");
-    const tireLabel = document.getElementById("tireLabel");
-
-    const noiseRange = document.getElementById("noiseRange");
-    const noiseLabel = document.getElementById("noiseLabel");
-
-    const motorPoleRange = document.getElementById("motorPoleRange");
-    const poleMotorLabel = document.getElementById("poleMotorLabel");
-
-    const poleCountRange = document.getElementById("poleCountRange");
-    const poleCountLabel = document.getElementById("poleCountLabel");
-
-    const rpmCalRange = document.getElementById("rpmCalRange");
-    const rpmCalLabel = document.getElementById("rpmCalLabel");
-
-    const avgRpmEl = document.getElementById("avgRpm");
-    const maxRpmEl = document.getElementById("maxRpm");
-    const minRpmEl = document.getElementById("minRpm");
-    const avgSpeedEl = document.getElementById("avgSpeed");
-    const maxSpeedEl = document.getElementById("maxSpeed");
-    const minSpeedEl = document.getElementById("minSpeed");
-    const standbyText = document.getElementById("standbyText");
-    const waveStatusLabel = document.getElementById("waveStatusLabel");
-
-    function drawWave() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const w = canvas.width;
-      const h = canvas.height;
-      const mid = h / 2;
-      ctx.lineWidth = 3 * window.devicePixelRatio;
-      const grad = ctx.createLinearGradient(0, 0, w, h);
-      grad.addColorStop(0, "#1f7aff");
-      grad.addColorStop(0.5, "#ff4b4b");
-      grad.addColorStop(1, "#1f7aff");
-      ctx.strokeStyle = grad;
-      ctx.beginPath();
-
-      let rpmForWave = Number(avgRpmEl.textContent) || 0;
-      const norm = Math.min(rpmForWave / 50000, 1);
-      const amplitude = measuring ? h * (0.15 + 0.15 * norm) : h * 0.06;
-      const freq = measuring ? 0.02 + 0.01 * norm : 0.01;
-
-      for (let x = 0; x < w; x++) {
-        const y =
-          mid +
-          Math.sin((x + wavePhase) * freq) * amplitude *
-          (0.6 + 0.4 * Math.sin((x + wavePhase) * 0.002));
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-      wavePhase += measuring ? 4 : 1;
-      requestAnimationFrame(drawWave);
-    }
-    drawWave();
-
-    // --- 計測条件ラベル ---
-    
-    voltageRange.addEventListener("input", () => {
-      voltageLabel.textContent = Number(voltageRange.value).toFixed(1) + " V";
-    });
-
-    
-    gearRange.addEventListener("input", () => {
-      gearLabel.textContent = gearOptions[gearRange.value];
-    });
-
-    
-    tireRange.addEventListener("input", () => {
-      tireLabel.textContent = Number(tireRange.value).toFixed(1) + " mm";
-    });
-
-    // --- 音声解析設定ラベル ---
-    
-    noiseRange.addEventListener("input", () => {
-      noiseLabel.textContent = noiseRange.value + " dB";
-    });
-
-    
-    motorPoleRange.addEventListener("input", () => {
-      poleMotorLabel.textContent = motorPoleRange.value;
-    });
-
-    
-    poleCountRange.addEventListener("input", () => {
-      poleCountLabel.textContent = poleCountRange.value;
-    });
-
-    
-    rpmCalRange.addEventListener("input", () => {
-      rpmCalLabel.textContent = Number(rpmCalRange.value).toFixed(2);
-    });
-
-    // --- リアルタイム統計 ---
-    
-
-    let rpmHistory = [];
-
-    function rpmToKmh(rpm, tireMm, gearRatio) {
-      const tireM = tireMm / 1000;
-      const circumference = tireM * Math.PI;
-      const wheelRpm = rpm / gearRatio;
-      const mPerMin = wheelRpm * circumference;
-      const kmPerH = (mPerMin * 60) / 1000;
-      return kmPerH;
+    function getEventsForDate(dateStr) {
+      return getEvents()
+        .filter(e => e.date === dateStr)
+        .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
     }
 
-    function updateStatsFromRpm(rpm) {
-      if (!rpm || lockedStats) return;
-      rpmHistory.push(rpm);
-      if (rpmHistory.length > 20) rpmHistory.shift();
-
-      const avgRpm = rpmHistory.reduce((a, b) => a + b, 0) / rpmHistory.length;
-      const maxRpm = Math.max(...rpmHistory);
-      const minRpm = Math.min(...rpmHistory);
-
-      avgRpmEl.textContent = Math.round(avgRpm);
-      maxRpmEl.textContent = Math.round(maxRpm);
-      minRpmEl.textContent = Math.round(minRpm);
-
-      const tireMm = Number(tireRange.value);
-      const gearRatio = parseFloat(gearOptions[gearRange.value]);
-      avgSpeedEl.textContent = rpmToKmh(avgRpm, tireMm, gearRatio).toFixed(2) + " km/h";
-      maxSpeedEl.textContent = rpmToKmh(maxRpm, tireMm, gearRatio).toFixed(2) + " km/h";
-      minSpeedEl.textContent = rpmToKmh(minRpm, tireMm, gearRatio).toFixed(2) + " km/h";
+    // ===== 日付ユーティリティ =====
+    function formatDateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
 
-    function audioLoop() {
-  if (measuring && analyser) {
-    const freq = getPeakFrequency();
-    if (freq > 0) {
-      const rpm = computeRpmFromFreq(freq);
-      updateStatsFromRpm(rpm);
+    function formatDisplayDate(date) {
+      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      return `${date.getMonth() + 1}月${date.getDate()}日（${weekdays[date.getDay()]}）`;
     }
-  }
 
-  // ★これが絶対に必要（ループ継続）
-  requestAnimationFrame(audioLoop);
-}
+    function formatMonthLabel(date) {
+      return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+    }
 
-    audioLoop();
+    function getWeekStart(date) {
+      const d = new Date(date);
+      d.setDate(d.getDate() - d.getDay());
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
 
-    // --- トップ比較表 ---
-    const comparisonBody = document.getElementById("comparisonBody");
-    function buildComparisonTable(baseRpmFromLock) {
-      const voltages = [2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4];
-      comparisonBody.innerHTML = "";
-      const tireMm = Number(tireRange.value);
-      const ratios = [3.5, 3.7, 4.0, 4.2, 5.0, 6.4, 8.75, 11.2];
-
-      voltages.forEach((v) => {
-        const refV = Number(voltageRange.value);
-        const refRpm = baseRpmFromLock || 20000;
-        const baseRpm = refRpm * (v / refV);
-        const tr = document.createElement("tr");
-
-        const tdV = document.createElement("td");
-        tdV.textContent = v.toFixed(1);
-        tr.appendChild(tdV);
-
-        const tdRpm = document.createElement("td");
-        tdRpm.textContent = Math.round(baseRpm);
-        tr.appendChild(tdRpm);
-
-        ratios.forEach((r) => {
-          const td = document.createElement("td");
-          td.textContent = rpmToKmh(baseRpm, tireMm, r).toFixed(2);
-          tr.appendChild(td);
-        });
-
-        comparisonBody.appendChild(tr);
+    // ===== ビュー切替 =====
+    function switchView(view) {
+      currentView = view;
+      document.querySelectorAll('.view-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.view === view);
       });
-    }
-    buildComparisonTable(null);
-　　// --- ボタン ---
-    const startBtn = document.getElementById("startBtn");
-    const lockBtn = document.getElementById("lockBtn");
-    const saveBtn = document.getElementById("saveBtn");
-    const resetBtn = document.getElementById("resetBtn");
+      document.getElementById('monthView').classList.toggle('active', view === 'month');
+      document.getElementById('weekView').classList.toggle('active', view === 'week');
+      document.getElementById('dayView').classList.toggle('active', view === 'day');
 
-    startBtn.addEventListener("click", async () => {
-      measuring = !measuring;
-      if (measuring) {
-        await startAudio();
-        rpmHistory = [];
-        startBtn.textContent = "計測停止";
-        standbyText.textContent = "MEASURING";
-        waveStatusLabel.textContent = "LIVE";
+      if (view === 'month') {
+        renderMonth();
+      } else if (view === 'week') {
+        renderWeek();
       } else {
-        stopAudio();
-        startBtn.textContent = "計測開始";
-        standbyText.textContent = "STANDBY";
-        waveStatusLabel.textContent = "STANDBY";
+        renderDay();
       }
-    });
-
-    lockBtn.addEventListener("click", () => {
-      lockedStats = !lockedStats;
-      lockBtn.classList.toggle("gray");
-      lockBtn.classList.toggle("outline");
-      lockBtn.textContent = lockedStats ? "ロック解除" : "ロック";
-
-      if (lockedStats) {
-        const avgRpm = Number(avgRpmEl.textContent) || 20000;
-        buildComparisonTable(avgRpm);
-      }
-    });
-
-    resetBtn.addEventListener("click", () => {
-      measuring = false;
-      lockedStats = false;
-      stopAudio();
-      startBtn.textContent = "計測開始";
-      lockBtn.textContent = "ロック";
-      lockBtn.classList.add("gray");
-      lockBtn.classList.remove("outline");
-      standbyText.textContent = "STANDBY";
-      waveStatusLabel.textContent = "STANDBY";
-      avgRpmEl.textContent = "0";
-      maxRpmEl.textContent = "0";
-      minRpmEl.textContent = "0";
-      avgSpeedEl.textContent = "0.00 km/h";
-      maxSpeedEl.textContent = "0.00 km/h";
-      minSpeedEl.textContent = "0.00 km/h";
-      rpmHistory = [];
-      buildComparisonTable(null);
-    });
-
-    // --- 履歴データ ---
-    const historyList = document.getElementById("historyList");
-    const filterMotor = document.getElementById("filterMotor");
-    const filterVoltage = document.getElementById("filterVoltage");
-    const filterGear = document.getElementById("filterGear");
-    const filterTire = document.getElementById("filterTire");
-    const historyComparisonBody = document.getElementById("historyComparisonBody");
-
-    const historyData = [];
-
-    function populateFilterOptions() {
-      const motors = new Set();
-      const voltages = new Set();
-      const gears = new Set();
-      const tires = new Set();
-      historyData.forEach((h) => {
-        motors.add(h.motor);
-        voltages.add(h.voltage);
-        gears.add(h.gear);
-        tires.add(h.tire);
-      });
-
-      function fillSelect(select, set) {
-        const current = select.value;
-        select.innerHTML = '<option value="">すべて</option>';
-        set.forEach((v) => {
-          const opt = document.createElement("option");
-          opt.value = v;
-          opt.textContent = v;
-          select.appendChild(opt);
-        });
-        if (set.has(current)) select.value = current;
-      }
-
-      fillSelect(filterMotor, motors);
-      fillSelect(filterVoltage, voltages);
-      fillSelect(filterGear, gears);
-      fillSelect(filterTire, tires);
+      updatePeriodLabel();
     }
 
-    function renderHistory() {
-      historyList.innerHTML = "";
-
-      const headerTop = document.createElement("div");
-      headerTop.className = "history-header-top";
-      ["日付", "モーター名", "電圧", "ギヤ比", "タイヤ径", "反映", "削除"].forEach((label) => {
-        const span = document.createElement("span");
-        span.textContent = label;
-        headerTop.appendChild(span);
-      });
-      historyList.appendChild(headerTop);
-
-      const headerBottom = document.createElement("div");
-      headerBottom.className = "history-header-bottom";
-      ["最高速度", "MAXRPM", "AVGRPM", "", "", "", ""].forEach((label) => {
-        const span = document.createElement("span");
-        span.textContent = label;
-        headerBottom.appendChild(span);
-      });
-      historyList.appendChild(headerBottom);
-
-      const m = filterMotor.value;
-      const v = filterVoltage.value;
-      const g = filterGear.value;
-      const t = filterTire.value;
-
-      historyData
-        .filter((h) => (!m || h.motor === m))
-        .filter((h) => (!v || h.voltage === v))
-        .filter((h) => (!g || h.gear === g))
-        .filter((h) => (!t || h.tire === t))
-        .forEach((h, idx) => {
-          const block = document.createElement("div");
-          block.className = "history-block";
-
-          const rowTop = document.createElement("div");
-          rowTop.className = "history-row-top";
-          function cell(text) {
-            const span = document.createElement("span");
-            span.textContent = text;
-            return span;
-          }
-
-          rowTop.appendChild(cell(h.date));
-          rowTop.appendChild(cell(h.motor));
-          rowTop.appendChild(cell(h.voltage));
-          rowTop.appendChild(cell(h.gear));
-          rowTop.appendChild(cell(h.tire));
-
-          const reflect = document.createElement("button");
-          reflect.className = "reflect-btn";
-          reflect.textContent = "⇄";
-          reflect.title = "比較表に反映";
-          reflect.addEventListener("click", () => {
-            voltageRange.value = parseFloat(h.voltage);
-            voltageLabel.textContent = h.voltage;
-            const gearIndex = gearOptions.indexOf(h.gear);
-            if (gearIndex >= 0) {
-              gearRange.value = gearIndex;
-              gearLabel.textContent = h.gear;
-            }
-            const tireVal = parseFloat(h.tire);
-            tireRange.value = tireVal;
-            tireLabel.textContent = tireVal.toFixed(1) + " mm";
-
-            buildComparisonTable(Number(h.avgRpm));
-
-            historyComparisonBody.innerHTML = "";
-            const tr = document.createElement("tr");
-            const tireMm = parseFloat(h.tire);
-            const ratios = [3.5, 3.7, 4.0, 4.2, 5.0, 6.4, 8.75, 11.2];
-            const baseRpm = Number(h.avgRpm);
-
-            const cells = [
-              h.motor,
-              h.voltage,
-              baseRpm.toFixed(0),
-              ...ratios.map(r => rpmToKmh(baseRpm, tireMm, r).toFixed(2))
-            ];
-            cells.forEach((val) => {
-              const td = document.createElement("td");
-              td.textContent = val;
-              tr.appendChild(td);
-            });
-            historyComparisonBody.appendChild(tr);
-          });
-          rowTop.appendChild(reflect);
-
-          const del = document.createElement("button");
-          del.className = "delete-btn";
-          del.innerHTML = "🗑️";
-          del.addEventListener("click", () => {
-            historyData.splice(idx, 1);
-            populateFilterOptions();
-            renderHistory();
-          });
-          rowTop.appendChild(del);
-
-          const rowBottom = document.createElement("div");
-          rowBottom.className = "history-row-bottom";
-          rowBottom.appendChild(cell(h.maxSpeed + " km/h"));
-          rowBottom.appendChild(cell(h.maxRpm));
-          rowBottom.appendChild(cell(h.avgRpm));
-          rowBottom.appendChild(cell(""));
-          rowBottom.appendChild(cell(""));
-          rowBottom.appendChild(cell(""));
-          rowBottom.appendChild(cell(""));
-
-
-          block.appendChild(rowTop);
-          block.appendChild(rowBottom);
-          historyList.appendChild(block);
-        });
+    function navigate(delta) {
+      if (currentView === 'month') {
+        currentDate.setMonth(currentDate.getMonth() + delta);
+        renderMonth();
+      } else if (currentView === 'week') {
+        currentDate.setDate(currentDate.getDate() + delta * 7);
+        renderWeek();
+      } else {
+        selectedDate.setDate(selectedDate.getDate() + delta);
+        currentDate = new Date(selectedDate);
+        renderDay();
+      }
+      updatePeriodLabel();
     }
 
-    [filterMotor, filterVoltage, filterGear, filterTire].forEach((sel) =>
-      sel.addEventListener("change", renderHistory)
-    );
+    function goToToday() {
+      currentDate = new Date();
+      selectedDate = new Date();
+      if (currentView === 'month') renderMonth();
+      else if (currentView === 'week') renderWeek();
+      else renderDay();
+      updatePeriodLabel();
+    }
 
-    // 保存ボタン：保存名を求めて履歴に追加
-    saveBtn.addEventListener("click", () => {
-      const name = prompt("保存するモーター名を入力してください");
-      if (!name) return;
+    function updatePeriodLabel() {
+      const label = document.getElementById('periodLabel');
+      if (currentView === 'month') {
+        label.textContent = formatMonthLabel(currentDate);
+      } else if (currentView === 'week') {
+        const start = getWeekStart(currentDate);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        label.textContent = `${start.getMonth() + 1}/${start.getDate()} – ${end.getMonth() + 1}/${end.getDate()}`;
+      } else {
+        label.textContent = formatDisplayDate(selectedDate);
+      }
+    }
 
-      const newEntry = {
-        date: new Date().toISOString().slice(2, 10).replace(/-/g, ""),
-        motor: name,
-        voltage: voltageLabel.textContent,
-        gear: gearLabel.textContent,
-        tire: tireLabel.textContent,
-        maxSpeed: maxSpeedEl.textContent.replace(" km/h", ""),
-        maxRpm: maxRpmEl.textContent,
-        avgRpm: avgRpmEl.textContent,
+    // ===== 月間レンダリング =====
+    function renderMonth() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDayOfWeek = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+      const prevMonthLast = new Date(year, month, 0).getDate();
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      const today = new Date();
+      const todayKey = formatDateKey(today);
+      const events = getEvents();
+
+      // 前月
+      for (let i = startDayOfWeek - 1; i >= 0; i--) {
+        const day = prevMonthLast - i;
+        const date = new Date(year, month - 1, day);
+        grid.appendChild(createDayCell(date, true, todayKey, events));
+      }
+
+      // 当月
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        grid.appendChild(createDayCell(date, false, todayKey, events));
+      }
+
+      // 次月
+      const totalCells = startDayOfWeek + daysInMonth;
+      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let day = 1; day <= remaining; day++) {
+        const date = new Date(year, month + 1, day);
+        grid.appendChild(createDayCell(date, true, todayKey, events));
+      }
+
+      // 今日の予定
+      renderTodaySection();
+    }
+
+    function createDayCell(date, isOther, todayKey, events) {
+      const cell = document.createElement('div');
+      cell.className = 'day-cell';
+      if (isOther) cell.classList.add('other-month');
+      if (date.getDay() === 0) cell.classList.add('sunday');
+      if (date.getDay() === 6) cell.classList.add('saturday');
+
+      const key = formatDateKey(date);
+      if (key === todayKey) cell.classList.add('today');
+
+      const num = document.createElement('div');
+      num.className = 'day-number';
+      num.textContent = date.getDate();
+      cell.appendChild(num);
+
+      // 予定名を表示（最大2件 + 残り）
+      const dayEvents = events.filter(e => e.date === key);
+      if (dayEvents.length > 0) {
+        const wrap = document.createElement('div');
+        wrap.className = 'day-events';
+        const maxShow = 4;
+        dayEvents.slice(0, maxShow).forEach(ev => {
+          const el = document.createElement('div');
+          el.className = 'day-event-name';
+          el.textContent = ev.title || '無題';
+          wrap.appendChild(el);
+        });
+        if (dayEvents.length > maxShow) {
+          const more = document.createElement('div');
+          more.className = 'day-event-name more';
+          more.textContent = `+${dayEvents.length - maxShow}`;
+          wrap.appendChild(more);
+        }
+        cell.appendChild(wrap);
+      }
+
+      cell.onclick = () => {
+        selectedDate = new Date(date);
+        currentDate = new Date(date);
+        switchView('day');
       };
-      historyData.push(newEntry);
-      populateFilterOptions();
-      renderHistory();
-    });
+      return cell;
+    }
 
-    // --- モーダル制御 ---
-    const settingsIcon = document.getElementById("settingsIcon");
-    const settingsModalBackdrop = document.getElementById("settingsModalBackdrop");
-    const settingsClose = document.getElementById("settingsClose");
+    function renderTodaySection() {
+      const today = new Date();
+      const key = formatDateKey(today);
+      document.getElementById('todayDateLabel').textContent = formatDisplayDate(today);
+      const list = document.getElementById('todayEventsList');
+      const events = getEventsForDate(key);
 
-    settingsIcon.addEventListener("click", () => {
-      settingsModalBackdrop.style.display = "flex";
-    });
-    settingsClose.addEventListener("click", () => {
-      settingsModalBackdrop.style.display = "none";
-    });
-    settingsModalBackdrop.addEventListener("click", (e) => {
-      if (e.target === settingsModalBackdrop) settingsModalBackdrop.style.display = "none";
-    });
+      if (events.length === 0) {
+        list.innerHTML = `<div class="empty-state" style="padding:24px 0"><p>今日の予定はありません</p></div>`;
+        return;
+      }
 
-    const historyIcon = document.getElementById("historyIcon");
-    const historyModalBackdrop = document.getElementById("historyModalBackdrop");
-    const historyClose = document.getElementById("historyClose");
+      list.innerHTML = events.map(ev => eventCardHtml(ev)).join('');
+    }
 
-    historyIcon.addEventListener("click", () => {
-      historyModalBackdrop.style.display = "flex";
-      renderHistory();
-    });
-    historyClose.addEventListener("click", () => {
-      historyModalBackdrop.style.display = "none";
-    });
-    historyModalBackdrop.addEventListener("click", (e) => {
-      if (e.target === historyModalBackdrop) historyModalBackdrop.style.display = "none";
-    });
-// --- 最後に波形アニメーションを開始 ---
-drawWave();
+    // ===== 週間レンダリング =====
+    function renderWeek() {
+      const start = getWeekStart(currentDate);
+      const todayKey = formatDateKey(new Date());
+      const events = getEvents();
+      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      // 曜日ごとの色（日〜土）
+      const dayColors = [
+        'rgba(255, 59, 48, 0.90)',   // 日 赤
+        'rgba(255, 149, 0, 0.90)',   // 月 オレンジ
+        'rgba(255, 179, 0, 0.92)',   // 火 黄オレンジ
+        'rgba(52, 199, 89, 0.90)',   // 水 緑
+        'rgba(50, 173, 230, 0.90)',  // 木 水色
+        'rgba(0, 122, 255, 0.90)',   // 金 青
+        'rgba(175, 82, 222, 0.90)'   // 土 紫
+      ];
+      const HOUR_START = 7;  // 7:00
+      const HOUR_END = 21;   // 21:00
+      const HOUR_COUNT = HOUR_END - HOUR_START; // 14 → 実際は15行分（7〜21）
+      const ROW_H = 48;
+
+      // ヘッダー
+      let headerHtml = '<div style="width:48px"></div>';
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i);
+        const key = formatDateKey(d);
+        const isToday = key === todayKey;
+        const isSun = d.getDay() === 0;
+        const isSat = d.getDay() === 6;
+        let cls = 'week-day-header';
+        if (isToday) cls += ' today';
+        if (isSun) cls += ' sunday';
+        if (isSat) cls += ' saturday';
+        headerHtml += `
+          <div class="${cls}" onclick="selectedDate=new Date('${key}');switchView('day')">
+            <div class="week-day-name">${weekdays[d.getDay()]}</div>
+            <div class="week-day-num">${d.getDate()}</div>
+          </div>`;
+      }
+      document.getElementById('weekHeader').innerHTML = headerHtml;
+
+      // ボディ（7:00〜21:00）
+      let bodyHtml = '<div class="time-labels">';
+      for (let h = HOUR_START; h <= HOUR_END; h++) {
+        bodyHtml += `<div class="time-label">${h}:00</div>`;
+      }
+      bodyHtml += '</div>';
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i);
+        const key = formatDateKey(d);
+        const dayEvents = events.filter(e => e.date === key);
+        const color = dayColors[d.getDay()];
+
+        bodyHtml += `<div class="week-col" data-date="${key}">`;
+        for (let h = 0; h <= HOUR_COUNT; h++) {
+          bodyHtml += `<div class="hour-line" style="top:${h * ROW_H}px"></div>`;
+        }
+
+        dayEvents.forEach(ev => {
+          let [sh, sm] = (ev.start || '09:00').split(':').map(Number);
+          let [eh, em] = (ev.end || '10:00').split(':').map(Number);
+          // 表示範囲外はクリップ
+          if (eh < HOUR_START || sh > HOUR_END) return;
+          if (sh < HOUR_START) { sh = HOUR_START; sm = 0; }
+          if (eh > HOUR_END) { eh = HOUR_END; em = 0; }
+
+          const top = ((sh - HOUR_START) + sm / 60) * ROW_H;
+          let height = ((eh + em / 60) - (sh + sm / 60)) * ROW_H;
+          if (height < 18) height = 18;
+
+          bodyHtml += `
+            <div class="week-event" style="top:${top}px;height:${height}px;background:${color}"
+                 onclick="event.stopPropagation();openEditModal('${ev.id}')">
+              <div class="week-event-title">${escapeHtml(ev.title || '無題')}</div>
+            </div>`;
+        });
+        bodyHtml += '</div>';
+      }
+
+      document.getElementById('weekBody').innerHTML = bodyHtml;
+    }
+
+    // ===== 1日レンダリング =====
+    function renderDay() {
+      document.getElementById('dayViewDate').textContent = formatDisplayDate(selectedDate);
+      const key = formatDateKey(selectedDate);
+      const events = getEventsForDate(key);
+      const list = document.getElementById('dayEventsList');
+
+      if (events.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <p>予定はありません</p>
+            <p style="font-size:13px">右下の＋で追加できます</p>
+          </div>`;
+        return;
+      }
+      list.innerHTML = events.map(ev => eventCardHtml(ev)).join('');
+    }
+
+    function eventCardHtml(ev) {
+      const mediaHtml = (ev.media || []).map(m => {
+        if (m.type === 'image') return `<img src="${m.dataUrl}" alt="">`;
+        return `<video src="${m.dataUrl}" muted></video>`;
+      }).join('');
+
+      const addressHtml = ev.address
+        ? `<div class="event-address" onclick="event.stopPropagation();openMaps('${String(ev.address).replace(/'/g, "\\'")}')">📍 ${escapeHtml(ev.address)}</div>`
+        : '';
+
+      return `
+        <div class="event-card" onclick="openEditModal('${ev.id}')">
+          <div class="event-time">${ev.start || ''} – ${ev.end || ''}</div>
+          <div class="event-title">${escapeHtml(ev.title || '無題')}</div>
+          ${addressHtml}
+          ${ev.content ? `<div class="event-content">${escapeHtml(ev.content)}</div>` : ''}
+          ${mediaHtml ? `<div class="event-media">${mediaHtml}</div>` : ''}
+        </div>`;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    function openMaps(address) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+    }
+
+    // ===== モーダル =====
+    function openAddModal() {
+      editingEventId = null;
+      tempMedia = [];
+      document.getElementById('modalTitle').textContent = '新規予定';
+      document.querySelector('.modal-save').textContent = '追加';
+      document.getElementById('deleteBtn').style.display = 'none';
+
+      const baseDate = currentView === 'day' ? selectedDate : (currentView === 'week' ? currentDate : new Date());
+      document.getElementById('eventDate').value = formatDateKey(baseDate);
+      document.getElementById('eventTitle').value = '';
+      document.getElementById('eventStart').value = '09:00';
+      document.getElementById('eventEnd').value = '10:00';
+      document.getElementById('eventAddress').value = '';
+      document.getElementById('eventContent').value = '';
+      renderMediaPreview();
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function openEditModal(id) {
+      const events = getEvents();
+      const ev = events.find(e => e.id === id);
+      if (!ev) return;
+
+      editingEventId = id;
+      tempMedia = [...(ev.media || [])];
+      document.getElementById('modalTitle').textContent = '予定を編集';
+      document.querySelector('.modal-save').textContent = '保存';
+      document.getElementById('deleteBtn').style.display = 'block';
+      document.getElementById('eventDate').value = ev.date || '';
+      document.getElementById('eventTitle').value = ev.title || '';
+      document.getElementById('eventStart').value = ev.start || '09:00';
+      document.getElementById('eventEnd').value = ev.end || '10:00';
+      document.getElementById('eventAddress').value = ev.address || '';
+      document.getElementById('eventContent').value = ev.content || '';
+      renderMediaPreview();
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+      tempMedia = [];
+    }
+
+    function saveEvent() {
+      const title = document.getElementById('eventTitle').value.trim();
+      const date = document.getElementById('eventDate').value;
+      const start = document.getElementById('eventStart').value;
+      const end = document.getElementById('eventEnd').value;
+      const address = document.getElementById('eventAddress').value.trim();
+      const content = document.getElementById('eventContent').value.trim();
+
+      if (!date) {
+        alert('日付を選択してください');
+        return;
+      }
+      if (!title && !address && !content && tempMedia.length === 0) {
+        alert('何か入力してください');
+        return;
+      }
+
+      const events = getEvents();
+
+      if (editingEventId) {
+        const idx = events.findIndex(e => e.id === editingEventId);
+        if (idx !== -1) {
+          events[idx] = {
+            ...events[idx],
+            date, title, start, end, address, content,
+            media: tempMedia
+          };
+        }
+      } else {
+        events.push({
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+          date, title, start, end, address, content,
+          media: tempMedia
+        });
+      }
+
+      saveEvents(events);
+      closeModal();
+
+      // 表示更新
+      if (currentView === 'month') renderMonth();
+      else if (currentView === 'week') renderWeek();
+      else {
+        selectedDate = new Date(date + 'T12:00:00');
+        renderDay();
+      }
+    }
+
+    function deleteEvent() {
+      if (!confirm('この予定を削除しますか？')) return;
+      const events = getEvents().filter(e => e.id !== editingEventId);
+      saveEvents(events);
+      closeModal();
+      if (currentView === 'month') renderMonth();
+      else if (currentView === 'week') renderWeek();
+      else renderDay();
+    }
+
+    // ===== カメラ・メディア =====
+    function capturePhoto() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment';
+      input.onchange = handleFiles;
+      input.click();
+    }
+
+    function captureVideo() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'video/*';
+      input.capture = 'environment';
+      input.onchange = handleFiles;
+      input.click();
+    }
+
+    function selectFile() {
+      document.getElementById('fileInput').click();
+    }
+
+    function handleFiles(e) {
+      const files = Array.from(e.target.files || []);
+      files.forEach(file => {
+        if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return;
+        if (file.size > 5 * 1024 * 1024) {
+          alert('ファイルが大きすぎます（5MB以下にしてください）');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          tempMedia.push({
+            type: file.type.startsWith('image/') ? 'image' : 'video',
+            dataUrl: ev.target.result
+          });
+          renderMediaPreview();
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    }
+
+    function renderMediaPreview() {
+      const preview = document.getElementById('mediaPreview');
+      preview.innerHTML = tempMedia.map((m, i) => `
+        <div class="media-item">
+          ${m.type === 'image'
+            ? `<img src="${m.dataUrl}" alt="">`
+            : `<video src="${m.dataUrl}" muted></video>`}
+          <button class="media-remove" onclick="removeMedia(${i})">×</button>
+        </div>
+      `).join('');
+    }
+
+    function removeMedia(index) {
+      tempMedia.splice(index, 1);
+      renderMediaPreview();
+    }
+
+    // ===== 初期化 =====
+    switchView('month');
   </script>
 </body>
 </html>
