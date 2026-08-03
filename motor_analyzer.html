@@ -1,107 +1,995 @@
+⌘K
+⌘J
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+index.html
+
+ワイド表示
+
+モバイル
+
+情報源
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>Motor RPM Spectrogram Analyzer (100Hz-1000Hz)</title>
-    <style>
-        body { font-family: sans-serif; background-color: #1a1a1a; color: #eee; text-align: center; }
-        .controls { margin: 20px; }
-        button { font-size: 1.2em; padding: 10px 25px; cursor: pointer; border: none; border-radius: 5px; margin: 0 10px; font-weight: bold; }
-        #startBtn { background-color: #27ae60; color: white; }
-        #stopBtn { background-color: #c0392b; color: white; }
-        #canvasContainer { width: 1000px; height: 500px; margin: 0 auto; background: black; border: 2px solid #444; }
-        canvas { display: block; }
-        #status { margin-top: 10px; font-size: 1.2em; color: #f1c40f; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>スケジュール</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #f2f2f7;
+      color: #000;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ヘッダー */
+    .header {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.15);
+      padding: 12px 16px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.4px;
+    }
+
+    .today-btn {
+      background: none;
+      border: none;
+      color: #007aff;
+      font-size: 17px;
+      font-weight: 400;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .month-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .month-label {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-arrows {
+      display: flex;
+      gap: 20px;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      color: #007aff;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 10px;
+      line-height: 1;
+    }
+
+    /* 曜日ヘッダー */
+    .weekday-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 8px 8px 4px;
+      background: #f2f2f7;
+    }
+
+    .weekday {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 500;
+      color: #8e8e93;
+      padding: 4px 0;
+    }
+
+    .weekday.sun { color: #ff3b30; }
+    .weekday.sat { color: #007aff; }
+
+    /* カレンダーグリッド */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+      padding: 0 4px 20px;
+      background: #fff;
+    }
+
+    .day-cell {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 6px;
+      cursor: pointer;
+      position: relative;
+      border-radius: 50%;
+      margin: 2px;
+      transition: background 0.15s;
+    }
+
+    .day-cell:active {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    .day-number {
+      font-size: 18px;
+      font-weight: 400;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      line-height: 1;
+    }
+
+    .day-cell.other-month .day-number {
+      color: #c7c7cc;
+    }
+
+    .day-cell.sunday .day-number { color: #ff3b30; }
+    .day-cell.saturday .day-number { color: #007aff; }
+    .day-cell.other-month.sunday .day-number,
+    .day-cell.other-month.saturday .day-number {
+      color: #c7c7cc;
+    }
+
+    .day-cell.today .day-number {
+      background: #007aff;
+      color: #fff !important;
+      font-weight: 600;
+    }
+
+    .day-cell.selected .day-number {
+      background: #e5e5ea;
+      font-weight: 600;
+    }
+
+    .day-cell.today.selected .day-number {
+      background: #007aff;
+      color: #fff !important;
+    }
+
+    .event-dots {
+      display: flex;
+      gap: 3px;
+      margin-top: 2px;
+      height: 6px;
+    }
+
+    .event-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #007aff;
+    }
+
+    .event-dot.multi { background: #34c759; }
+    .event-dot.important { background: #ff3b30; }
+
+    /* 1日ビュー */
+    .day-view {
+      display: none;
+      background: #f2f2f7;
+      min-height: calc(100vh - 120px);
+    }
+
+    .day-view.active {
+      display: block;
+    }
+
+    .day-view-header {
+      background: #fff;
+      padding: 16px;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: #007aff;
+      font-size: 17px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 0;
+    }
+
+    .day-view-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .events-list {
+      padding: 12px 16px;
+    }
+
+    .event-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .event-card:active {
+      transform: scale(0.98);
+    }
+
+    .event-time {
+      font-size: 13px;
+      color: #8e8e93;
+      margin-bottom: 4px;
+    }
+
+    .event-title {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .event-address {
+      font-size: 14px;
+      color: #007aff;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .event-content {
+      font-size: 14px;
+      color: #3a3a3c;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    .event-media {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+
+    .event-media img,
+    .event-media video {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #8e8e93;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    /* 追加ボタン */
+    .fab {
+      position: fixed;
+      bottom: 28px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #007aff;
+      color: #fff;
+      border: none;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+      cursor: pointer;
+      z-index: 50;
+      line-height: 1;
+    }
+
+    .fab:active {
+      transform: scale(0.92);
+    }
+
+    /* モーダル */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: #f2f2f7;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 14px 14px 0 0;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 16px 12px;
+      background: #fff;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .modal-close, .modal-save {
+      background: none;
+      border: none;
+      color: #007aff;
+      font-size: 17px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .modal-save {
+      font-weight: 600;
+    }
+
+    .form-group {
+      background: #fff;
+      margin: 12px 16px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .form-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .form-row:last-child {
+      border-bottom: none;
+    }
+
+    .form-label {
+      width: 70px;
+      font-size: 16px;
+      color: #3a3a3c;
+      flex-shrink: 0;
+    }
+
+    .form-input {
+      flex: 1;
+      border: none;
+      font-size: 16px;
+      background: transparent;
+      outline: none;
+      color: #000;
+    }
+
+    .form-input::placeholder {
+      color: #c7c7cc;
+    }
+
+    textarea.form-input {
+      min-height: 80px;
+      resize: none;
+      padding: 4px 0;
+    }
+
+    .media-section {
+      padding: 12px 16px;
+    }
+
+    .media-buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .media-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 15px;
+      color: #007aff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .media-preview {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .media-item {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+
+    .media-item img,
+    .media-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .media-remove {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ff3b30;
+      color: #fff;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .delete-btn {
+      width: calc(100% - 32px);
+      margin: 20px 16px;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #fff;
+      color: #ff3b30;
+      font-size: 17px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* カレンダー表示時は1日ビュー非表示 */
+    .calendar-section {
+      display: block;
+    }
+
+    .calendar-section.hidden {
+      display: none;
+    }
+
+    /* スマホ最適化 */
+    @media (min-width: 600px) {
+      body {
+        max-width: 430px;
+        margin: 0 auto;
+        border-left: 1px solid #e5e5ea;
+        border-right: 1px solid #e5e5ea;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Motor Audio Spectrogram (100Hz - 1000Hz)</h1>
-    
-    <div class="controls">
-        <button id="startBtn">集音スタート</button>
-        <button id="stopBtn" disabled>ストップ</button>
+  <!-- 月間カレンダー -->
+  <div class="calendar-section" id="calendarSection">
+    <div class="header">
+      <div class="header-top">
+        <div class="header-title">カレンダー</div>
+        <button class="today-btn" onclick="goToToday()">今日</button>
+      </div>
+      <div class="month-nav">
+        <div class="month-label" id="monthLabel">2026年8月</div>
+        <div class="nav-arrows">
+          <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+          <button class="nav-btn" onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
     </div>
-    <div id="canvasContainer">
-        <canvas id="spectrogramCanvas" width="1000" height="500"></canvas>
+
+    <div class="weekday-header">
+      <div class="weekday sun">日</div>
+      <div class="weekday">月</div>
+      <div class="weekday">火</div>
+      <div class="weekday">水</div>
+      <div class="weekday">木</div>
+      <div class="weekday">金</div>
+      <div class="weekday sat">土</div>
     </div>
-    <div id="status">Ready</div>
 
-    <script>
-        const canvas = document.getElementById('spectrogramCanvas');
-        const ctx = canvas.getContext('2d');
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const status = document.getElementById('status');
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
 
-        let audioCtx, analyser, dataArray, animationId;
-        const MIN_FREQ = 100;
-        const MAX_FREQ = 1000;
+  <!-- 1日ビュー -->
+  <div class="day-view" id="dayView">
+    <div class="day-view-header">
+      <button class="back-btn" onclick="showCalendar()">‹ 戻る</button>
+      <div class="day-view-title" id="dayViewTitle">8月3日（月）</div>
+    </div>
+    <div class="events-list" id="eventsList"></div>
+    <button class="fab" onclick="openAddModal()">＋</button>
+  </div>
 
-        startBtn.onclick = async () => {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const source = audioCtx.createMediaStreamSource(stream);
+  <!-- 予定追加・編集モーダル -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <button class="modal-close" onclick="closeModal()">キャンセル</button>
+        <div class="modal-title" id="modalTitle">新規予定</div>
+        <button class="modal-save" onclick="saveEvent()">追加</button>
+      </div>
 
-            // バンドパスフィルタ設定 (100Hz-1000Hz)
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.value = 550; 
-            filter.Q.value = 0.8; 
+      <div class="form-group">
+        <div class="form-row">
+          <div class="form-label">タイトル</div>
+          <input type="text" class="form-input" id="eventTitle" placeholder="予定の名前">
+        </div>
+        <div class="form-row">
+          <div class="form-label">開始</div>
+          <input type="time" class="form-input" id="eventStart" value="09:00">
+        </div>
+        <div class="form-row">
+          <div class="form-label">終了</div>
+          <input type="time" class="form-input" id="eventEnd" value="10:00">
+        </div>
+        <div class="form-row">
+          <div class="form-label">住所</div>
+          <input type="text" class="form-input" id="eventAddress" placeholder="住所を入力">
+        </div>
+      </div>
 
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 8192; // 解像度を上げて周波数を精細に解析
-            
-            source.connect(filter);
-            filter.connect(analyser);
+      <div class="form-group">
+        <div class="form-row" style="align-items: flex-start;">
+          <div class="form-label" style="padding-top: 4px;">内容</div>
+          <textarea class="form-input" id="eventContent" placeholder="メモ"></textarea>
+        </div>
+      </div>
 
-            dataArray = new Uint8Array(analyser.frequencyBinCount);
-            
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-            status.innerText = "Recording... Analyzing 100Hz to 1000Hz";
-            
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            draw();
-        };
+      <div class="media-section">
+        <div class="media-buttons">
+          <button class="media-btn" onclick="capturePhoto()">📷 写真</button>
+          <button class="media-btn" onclick="captureVideo()">🎥 動画</button>
+          <button class="media-btn" onclick="selectFile()">📁 選択</button>
+        </div>
+        <div class="media-preview" id="mediaPreview"></div>
+        <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFiles(event)">
+      </div>
 
-        stopBtn.onclick = () => {
-            cancelAnimationFrame(animationId);
-            audioCtx.close();
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            status.innerText = "Stopped";
-        };
+      <button class="delete-btn" id="deleteBtn" style="display:none" onclick="deleteEvent()">予定を削除</button>
+    </div>
+  </div>
 
-        function draw() {
-            analyser.getByteFrequencyData(dataArray);
-            const height = canvas.height;
-            const imageData = ctx.createImageData(1, height);
+  <script>
+    // ===== 状態管理 =====
+    let currentDate = new Date();
+    let selectedDate = null;
+    let editingEventId = null;
+    let tempMedia = []; // { type: 'image'|'video', dataUrl: string }
 
-            for (let i = 0; i < dataArray.length; i++) {
-                const freq = i * (audioCtx.sampleRate / 2) / dataArray.length;
-                
-                // 100Hz〜1000Hzの範囲のみを描画
-                if (freq >= MIN_FREQ && freq <= MAX_FREQ) {
-                    const y = Math.floor(height - ((freq - MIN_FREQ) / (MAX_FREQ - MIN_FREQ)) * height);
-                    const val = dataArray[i];
-                    
-                    // 熱マップ的な色付け
-                    const pos = (height - y) * 4;
-                    imageData.data[pos] = val;         // R
-                    imageData.data[pos + 1] = val / 2; // G
-                    imageData.data[pos + 2] = 255 - val; // B
-                    imageData.data[pos + 3] = 255;
-                }
-            }
+    // ===== データ（localStorage） =====
+    function getEvents() {
+      try {
+        return JSON.parse(localStorage.getItem('schedule_events') || '[]');
+      } catch {
+        return [];
+      }
+    }
 
-            // 右から左へずらす描画
-            const imgData = ctx.getImageData(1, 0, canvas.width - 1, height);
-            ctx.putImageData(imgData, 0, 0);
-            ctx.putImageData(imageData, canvas.width - 1, 0);
+    function saveEvents(events) {
+      localStorage.setItem('schedule_events', JSON.stringify(events));
+    }
 
-            animationId = requestAnimationFrame(draw);
+    function getEventsForDate(dateStr) {
+      return getEvents().filter(e => e.date === dateStr).sort((a, b) => a.start.localeCompare(b.start));
+    }
+
+    // ===== 日付ユーティリティ =====
+    function formatDateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDisplayDate(date) {
+      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      return `${date.getMonth() + 1}月${date.getDate()}日（${weekdays[date.getDay()]}）`;
+    }
+
+    function formatMonthLabel(date) {
+      return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+    }
+
+    // ===== カレンダー描画 =====
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      document.getElementById('monthLabel').textContent = formatMonthLabel(currentDate);
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDayOfWeek = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+
+      // 前月の日数
+      const prevMonthLast = new Date(year, month, 0).getDate();
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      const today = new Date();
+      const todayKey = formatDateKey(today);
+      const events = getEvents();
+
+      // 前月の埋め
+      for (let i = startDayOfWeek - 1; i >= 0; i--) {
+        const day = prevMonthLast - i;
+        const date = new Date(year, month - 1, day);
+        grid.appendChild(createDayCell(date, true, todayKey, events));
+      }
+
+      // 当月
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        grid.appendChild(createDayCell(date, false, todayKey, events));
+      }
+
+      // 次月の埋め（6行になるように）
+      const totalCells = startDayOfWeek + daysInMonth;
+      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let day = 1; day <= remaining; day++) {
+        const date = new Date(year, month + 1, day);
+        grid.appendChild(createDayCell(date, true, todayKey, events));
+      }
+    }
+
+    function createDayCell(date, isOther, todayKey, events) {
+      const cell = document.createElement('div');
+      cell.className = 'day-cell';
+      if (isOther) cell.classList.add('other-month');
+      if (date.getDay() === 0) cell.classList.add('sunday');
+      if (date.getDay() === 6) cell.classList.add('saturday');
+
+      const key = formatDateKey(date);
+      if (key === todayKey) cell.classList.add('today');
+
+      const num = document.createElement('div');
+      num.className = 'day-number';
+      num.textContent = date.getDate();
+      cell.appendChild(num);
+
+      // 予定ドット
+      const dayEvents = events.filter(e => e.date === key);
+      if (dayEvents.length > 0) {
+        const dots = document.createElement('div');
+        dots.className = 'event-dots';
+        const count = Math.min(dayEvents.length, 3);
+        for (let i = 0; i < count; i++) {
+          const dot = document.createElement('div');
+          dot.className = 'event-dot';
+          dots.appendChild(dot);
         }
-    </script>
+        cell.appendChild(dots);
+      }
+
+      cell.onclick = () => openDayView(date);
+      return cell;
+    }
+
+    function changeMonth(delta) {
+      currentDate.setMonth(currentDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function goToToday() {
+      currentDate = new Date();
+      renderCalendar();
+    }
+
+    // ===== 1日ビュー =====
+    function openDayView(date) {
+      selectedDate = new Date(date);
+      document.getElementById('calendarSection').classList.add('hidden');
+      document.getElementById('dayView').classList.add('active');
+      document.getElementById('dayViewTitle').textContent = formatDisplayDate(selectedDate);
+      renderDayEvents();
+    }
+
+    function showCalendar() {
+      document.getElementById('calendarSection').classList.remove('hidden');
+      document.getElementById('dayView').classList.remove('active');
+      renderCalendar(); // ドット更新
+    }
+
+    function renderDayEvents() {
+      const key = formatDateKey(selectedDate);
+      const events = getEventsForDate(key);
+      const list = document.getElementById('eventsList');
+
+      if (events.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <p>予定はありません</p>
+            <p style="font-size:14px">右下の＋ボタンで追加</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = events.map(ev => {
+        const mediaHtml = (ev.media || []).map(m => {
+          if (m.type === 'image') {
+            return `<img src="${m.dataUrl}" alt="">`;
+          } else {
+            return `<video src="${m.dataUrl}" muted></video>`;
+          }
+        }).join('');
+
+        const addressHtml = ev.address
+          ? `<div class="event-address" onclick="event.stopPropagation(); openMaps('${ev.address.replace(/'/g, "\\'")}')">📍 ${ev.address}</div>`
+          : '';
+
+        return `
+          <div class="event-card" onclick="openEditModal('${ev.id}')">
+            <div class="event-time">${ev.start} – ${ev.end}</div>
+            <div class="event-title">${escapeHtml(ev.title || '無題')}</div>
+            ${addressHtml}
+            ${ev.content ? `<div class="event-content">${escapeHtml(ev.content)}</div>` : ''}
+            ${mediaHtml ? `<div class="event-media">${mediaHtml}</div>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function openMaps(address) {
+      const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+      window.open(url, '_blank');
+    }
+
+    // ===== モーダル =====
+    function openAddModal() {
+      editingEventId = null;
+      tempMedia = [];
+      document.getElementById('modalTitle').textContent = '新規予定';
+      document.getElementById('modalOverlay').querySelector('.modal-save').textContent = '追加';
+      document.getElementById('deleteBtn').style.display = 'none';
+      document.getElementById('eventTitle').value = '';
+      document.getElementById('eventStart').value = '09:00';
+      document.getElementById('eventEnd').value = '10:00';
+      document.getElementById('eventAddress').value = '';
+      document.getElementById('eventContent').value = '';
+      renderMediaPreview();
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function openEditModal(id) {
+      const events = getEvents();
+      const ev = events.find(e => e.id === id);
+      if (!ev) return;
+
+      editingEventId = id;
+      tempMedia = [...(ev.media || [])];
+      document.getElementById('modalTitle').textContent = '予定を編集';
+      document.getElementById('modalOverlay').querySelector('.modal-save').textContent = '保存';
+      document.getElementById('deleteBtn').style.display = 'block';
+      document.getElementById('eventTitle').value = ev.title || '';
+      document.getElementById('eventStart').value = ev.start || '09:00';
+      document.getElementById('eventEnd').value = ev.end || '10:00';
+      document.getElementById('eventAddress').value = ev.address || '';
+      document.getElementById('eventContent').value = ev.content || '';
+      renderMediaPreview();
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+      // メディアの一時データをクリア（メモリ節約）
+      tempMedia = [];
+    }
+
+    function saveEvent() {
+      const title = document.getElementById('eventTitle').value.trim();
+      const start = document.getElementById('eventStart').value;
+      const end = document.getElementById('eventEnd').value;
+      const address = document.getElementById('eventAddress').value.trim();
+      const content = document.getElementById('eventContent').value.trim();
+
+      if (!title && !address && !content && tempMedia.length === 0) {
+        alert('何か入力してください');
+        return;
+      }
+
+      const events = getEvents();
+      const dateKey = formatDateKey(selectedDate);
+
+      if (editingEventId) {
+        const idx = events.findIndex(e => e.id === editingEventId);
+        if (idx !== -1) {
+          events[idx] = {
+            ...events[idx],
+            title, start, end, address, content,
+            media: tempMedia
+          };
+        }
+      } else {
+        events.push({
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+          date: dateKey,
+          title, start, end, address, content,
+          media: tempMedia
+        });
+      }
+
+      saveEvents(events);
+      closeModal();
+      renderDayEvents();
+    }
+
+    function deleteEvent() {
+      if (!confirm('この予定を削除しますか？')) return;
+      const events = getEvents().filter(e => e.id !== editingEventId);
+      saveEvents(events);
+      closeModal();
+      renderDayEvents();
+    }
+
+    // ===== カメラ・メディア =====
+    function capturePhoto() {
+      // 簡易実装：ファイル選択を開く（実機ではカメラが起動しやすい）
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment';
+      input.onchange = (e) => handleFiles(e);
+      input.click();
+    }
+
+    function captureVideo() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'video/*';
+      input.capture = 'environment';
+      input.onchange = (e) => handleFiles(e);
+      input.click();
+    }
+
+    function selectFile() {
+      document.getElementById('fileInput').click();
+    }
+
+    function handleFiles(e) {
+      const files = Array.from(e.target.files || []);
+      files.forEach(file => {
+        if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return;
+        // サイズ制限（約2MBまでを目安に圧縮は簡易）
+        if (file.size > 5 * 1024 * 1024) {
+          alert('ファイルが大きすぎます（5MB以下にしてください）');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          tempMedia.push({
+            type: file.type.startsWith('image/') ? 'image' : 'video',
+            dataUrl: ev.target.result
+          });
+          renderMediaPreview();
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    }
+
+    function renderMediaPreview() {
+      const preview = document.getElementById('mediaPreview');
+      preview.innerHTML = tempMedia.map((m, i) => `
+        <div class="media-item">
+          ${m.type === 'image'
+            ? `<img src="${m.dataUrl}" alt="">`
+            : `<video src="${m.dataUrl}" muted></video>`}
+          <button class="media-remove" onclick="removeMedia(${i})">×</button>
+        </div>
+      `).join('');
+    }
+
+    function removeMedia(index) {
+      tempMedia.splice(index, 1);
+      renderMediaPreview();
+    }
+
+    // ===== 初期化 =====
+    renderCalendar();
+  </script>
 </body>
 </html>
