@@ -1162,29 +1162,107 @@
     }
 
     // ===== 端末保存 =====
-    function saveDataUrlToDevice(dataUrl, filename) {
-      try {
-        var a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = filename || ('schedule_' + Date.now() + (dataUrl.indexOf('video') >= 0 || dataUrl.indexOf('mp4') >= 0 ? '.mp4' : '.jpg'));
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function() { document.body.removeChild(a); }, 200);
-        return true;
-      } catch (e) {
-        return false;
-      }
+    function dataUrlToBlob(dataUrl) {
+      var parts = dataUrl.split(',');
+      var mimeMatch = parts[0].match(/:(.*?);/);
+      var mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+      var binary = atob(parts[1] || '');
+      var len = binary.length;
+      var bytes = new Uint8Array(len);
+      for (var i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+      return new Blob([bytes], { type: mime });
+    }
+    function saveDataUrlToDevice(dataUrl, filename, mediaType) {
+      return new Promise(function(resolve) {
+        if (!dataUrl) { resolve(false); return; }
+        var isVideo = mediaType === 'video' || (dataUrl.indexOf('video') >= 0) || /\.mp4$/i.test(filename || '');
+        var name = filename || ('schedule_' + Date.now() + (isVideo ? '.mp4' : '.jpg'));
+        var mime = isVideo ? 'video/mp4' : 'image/jpeg';
+        try {
+          var blob = dataUrlToBlob(dataUrl);
+          if (blob.type) mime = blob.type;
+          var file = new File([blob], name, { type: mime });
+
+          // 1) Web Share API（iOS/Androidで「写真に追加」「ファイルに保存」を選べる）
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({
+              files: [file],
+              title: name
+            }).then(function() {
+              resolve(true);
+            }).catch(function(err) {
+              // ユーザーキャンセルは失敗扱いにしない
+              if (err && (err.name === 'AbortError' || err.name === 'NotAllowedError')) {
+                resolve(false);
+                return;
+              }
+              // 共有失敗時はダウンロードへ
+              downloadBlob(blob, name);
+              resolve(true);
+            });
+            return;
+          }
+
+          // 2) ダウンロード（PC・一部ブラウザ）
+          downloadBlob(blob, name);
+          resolve(true);
+        } catch (e) {
+          try {
+            // 3) dataURL 直接ダウンロードの最終手段
+            var a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = name;
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { document.body.removeChild(a); }, 300);
+            resolve(true);
+          } catch (e2) {
+            resolve(false);
+          }
+        }
+      });
+    }
+    function downloadBlob(blob, filename) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1500);
     }
     function saveCurrentLightboxToDevice() {
-      if (!currentLightboxItem) return;
-      var ext = currentLightboxItem.type === 'video' ? '.mp4' : '.jpg';
-      var name = 'schedule_' + (currentLightboxItem.date || '') + '_' + Date.now() + ext;
-      if (saveDataUrlToDevice(currentLightboxItem.dataUrl, name)) {
-        // iOSなどでは「写真に追加」などの選択肢が出ることがある
-      } else {
-        alert('端末への保存に失敗しました');
+      if (!currentLightboxItem || !currentLightboxItem.dataUrl) {
+        alert('保存できるデータがありません');
+        return;
       }
+      var btn = document.getElementById('lightboxSaveBtn');
+      var ext = currentLightboxItem.type === 'video' ? '.mp4' : '.jpg';
+      var name = 'schedule_' + (currentLightboxItem.date || formatDateKey(new Date())) + '_' + Date.now() + ext;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '保存中…';
+      }
+      saveDataUrlToDevice(currentLightboxItem.dataUrl, name, currentLightboxItem.type).then(function(ok) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = ok ? '保存しました' : '端末に保存';
+          if (ok) {
+            setTimeout(function() {
+              if (btn) btn.textContent = '端末に保存';
+            }, 1800);
+          }
+        }
+        if (!ok) {
+          // 共有シートをキャンセルした場合など
+        }
+      });
     }
 
     function compressImage(file, maxSize, quality) {
@@ -1257,10 +1335,8 @@
           // 端末へも保存を試みる（ダウンロード経由）
           // カメラ撮影時は OS が既にカメラフォルダへ保存している場合が多い
           // ギャラリー選択・圧縮後も端末に残したい場合にダウンロードを実行
-          var ext = item.type === 'video' ? '.mp4' : '.jpg';
-          var fname = 'schedule_' + formatDateKey(new Date()) + '_' + Date.now() + ext;
-          // カメラ capture でも圧縮版を端末に残すため保存を試みる
-          saveDataUrlToDevice(item.dataUrl, fname);
+          // 撮影時はOSが既にカメラロールへ保存していることが多い
+          // 明示的な保存はギャラリーの「端末に保存」から行う
         }).catch(function(err) {
           alert(err.message || 'ファイルの読み込みに失敗しました');
         });
