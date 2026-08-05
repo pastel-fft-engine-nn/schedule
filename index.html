@@ -18,7 +18,6 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
-    /* ===== 共通ヘッダー ===== */
     .app-header {
       background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(20px);
@@ -71,7 +70,6 @@
       padding: 2px 8px;
       line-height: 1;
     }
-    /* ビュー切替タブ */
     .view-tabs {
       display: flex;
       background: #e5e5ea;
@@ -98,7 +96,6 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       font-weight: 600;
     }
-    /* ===== 月間ビュー ===== */
     .weekday-header {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -203,7 +200,6 @@
       font-size: 8px;
       text-align: center;
     }
-    /* 今日のスケジュール（カレンダー下） */
     .today-section {
       background: #fff;
       margin-top: 10px;
@@ -225,7 +221,6 @@
       font-weight: 500;
       font-size: 13px;
     }
-    /* ===== 週間ビュー ===== */
     .week-view {
       display: none;
       background: #fff;
@@ -292,13 +287,10 @@
       position: relative;
       top: -6px;
     }
-    .week-columns {
-      display: contents;
-    }
     .week-col {
       border-left: 0.5px solid #e5e5ea;
       position: relative;
-      height: calc(48px * 15); /* 7:00〜21:00 = 15時間 */
+      height: calc(48px * 15);
     }
     .hour-line {
       position: absolute;
@@ -327,7 +319,6 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    /* ===== 1日ビュー ===== */
     .day-view {
       display: none;
       background: #f2f2f7;
@@ -401,7 +392,6 @@
       font-size: 15px;
       margin-bottom: 6px;
     }
-    /* FAB */
     .fab {
       position: fixed;
       bottom: 24px;
@@ -422,7 +412,6 @@
       line-height: 1;
     }
     .fab:active { transform: scale(0.92); }
-    /* ===== モーダル ===== */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -574,7 +563,6 @@
       font-weight: 500;
       cursor: pointer;
     }
-    /* ビュー表示制御 */
     .month-view { display: none; }
     .month-view.active { display: block; }
     @media (min-width: 600px) {
@@ -588,7 +576,6 @@
   </style>
 </head>
 <body>
-  <!-- ヘッダー（共通） -->
   <div class="app-header">
     <div class="header-row">
       <div class="header-title">スケジュール</div>
@@ -607,7 +594,7 @@
       <button class="view-tab" data-view="day" onclick="switchView('day')">日</button>
     </div>
   </div>
-  <!-- ===== 月間ビュー ===== -->
+
   <div class="month-view active" id="monthView">
     <div class="weekday-header">
       <div class="weekday sun">日</div>
@@ -619,7 +606,6 @@
       <div class="weekday sat">土</div>
     </div>
     <div class="calendar-grid" id="calendarGrid"></div>
-    <!-- 今日のスケジュール -->
     <div class="today-section">
       <div class="today-section-title">
         今日の予定
@@ -628,19 +614,19 @@
       <div id="todayEventsList"></div>
     </div>
   </div>
-  <!-- ===== 週間ビュー ===== -->
+
   <div class="week-view" id="weekView">
     <div class="week-header" id="weekHeader"></div>
     <div class="week-body" id="weekBody"></div>
   </div>
-  <!-- ===== 1日ビュー ===== */
+
   <div class="day-view" id="dayView">
     <div class="day-view-date" id="dayViewDate"></div>
     <div class="events-list" id="dayEventsList"></div>
   </div>
-  <!-- FAB -->
+
   <button class="fab" onclick="openAddModal()">＋</button>
-  <!-- 予定追加・編集モーダル -->
+
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <div class="modal-header">
@@ -688,71 +674,70 @@
       <button class="delete-btn" id="deleteBtn" style="display:none" onclick="deleteEvent()">予定を削除</button>
     </div>
   </div>
+
   <script>
-    // ===== 状態 =====
     let currentDate = new Date();
     let selectedDate = new Date();
-    let currentView = 'month'; // month | week | day
+    let currentView = 'month';
     let editingEventId = null;
     let tempMedia = [];
-    // ===== データ =====
+
     function getEvents() {
       try {
         return JSON.parse(localStorage.getItem('schedule_events') || '[]');
-      } catch { return []; }
+      } catch (e) {
+        return [];
+      }
     }
     function saveEvents(events) {
       localStorage.setItem('schedule_events', JSON.stringify(events));
     }
     function getEventsForDate(dateStr) {
       return getEvents()
-        .filter(e => e.date === dateStr)
-        .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+        .filter(function(e) { return e.date === dateStr; })
+        .sort(function(a, b) { return (a.start || '').localeCompare(b.start || ''); });
     }
-    // ===== 日付ユーティリティ =====
+
     function formatDateKey(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+      var y = date.getFullYear();
+      var m = String(date.getMonth() + 1).padStart(2, '0');
+      var d = String(date.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + d;
     }
     function formatDisplayDate(date) {
-      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-      return `${date.getMonth() + 1}月${date.getDate()}日（${weekdays[date.getDay()]}）`;
+      var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      return (date.getMonth() + 1) + '月' + date.getDate() + '日（' + weekdays[date.getDay()] + '）';
     }
     function formatMonthLabel(date) {
-      return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+      return date.getFullYear() + '年' + (date.getMonth() + 1) + '月';
     }
     function getWeekStart(date) {
-      const d = new Date(date);
+      var d = new Date(date);
       d.setDate(d.getDate() - d.getDay());
       d.setHours(0, 0, 0, 0);
       return d;
     }
-    // ===== 日本の祝日計算 =====
+
     function getNthMonday(year, month, n) {
-      // month: 0-11
-      const first = new Date(year, month, 1);
-      let day = 1 + ((1 - first.getDay() + 7) % 7); // first Monday
+      var first = new Date(year, month, 1);
+      var day = 1 + ((1 - first.getDay() + 7) % 7);
       day += (n - 1) * 7;
       return day;
     }
     function getVernalEquinox(year) {
-      // 国立天文台の近似式に近い簡易計算
-      const y = year - 1980;
+      var y = year - 1980;
       return Math.floor(20.8431 + 0.242194 * y - Math.floor(y / 4));
     }
     function getAutumnalEquinox(year) {
-      const y = year - 1980;
+      var y = year - 1980;
       return Math.floor(23.2488 + 0.242194 * y - Math.floor(y / 4));
     }
     function getJapaneseHolidays(year) {
-      const holidays = {}; // key: 'YYYY-MM-DD' -> name
-      const add = (m, d, name) => {
-        const key = `${year}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      var holidays = {};
+      function add(m, d, name) {
+        var key = year + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
         holidays[key] = name;
-      };
-      // 固定祝日
+      }
       add(1, 1, '元日');
       add(2, 11, '建国記念の日');
       add(2, 23, '天皇誕生日');
@@ -763,24 +748,22 @@
       add(8, 11, '山の日');
       add(11, 3, '文化の日');
       add(11, 23, '勤労感謝の日');
-      // ハッピーマンデー
       add(1, getNthMonday(year, 0, 2), '成人の日');
       add(7, getNthMonday(year, 6, 3), '海の日');
       add(9, getNthMonday(year, 8, 3), '敬老の日');
       add(10, getNthMonday(year, 9, 2), 'スポーツの日');
-      // 春分・秋分
       add(3, getVernalEquinox(year), '春分の日');
       add(9, getAutumnalEquinox(year), '秋分の日');
-      // 振替休日（日曜に祝日が重なった場合、その翌日以降の最初の平日）
-      const keys = Object.keys(holidays).sort();
-      keys.forEach(key => {
-        const [y, m, d] = key.split('-').map(Number);
-        const dt = new Date(y, m - 1, d);
-        if (dt.getDay() === 0) { // 日曜
-          let next = new Date(dt);
+
+      var keys = Object.keys(holidays).sort();
+      keys.forEach(function(key) {
+        var parts = key.split('-').map(Number);
+        var dt = new Date(parts[0], parts[1] - 1, parts[2]);
+        if (dt.getDay() === 0) {
+          var next = new Date(dt);
           next.setDate(next.getDate() + 1);
           while (true) {
-            const nk = formatDateKey(next);
+            var nk = formatDateKey(next);
             if (!holidays[nk]) {
               holidays[nk] = '振替休日';
               break;
@@ -789,19 +772,19 @@
           }
         }
       });
-      // 国民の休日（祝日と祝日に挟まれた平日）
-      const allKeys = Object.keys(holidays).sort();
-      for (let i = 0; i < allKeys.length - 1; i++) {
-        const [y1, m1, d1] = allKeys[i].split('-').map(Number);
-        const [y2, m2, d2] = allKeys[i + 1].split('-').map(Number);
-        const dA = new Date(y1, m1 - 1, d1);
-        const dB = new Date(y2, m2 - 1, d2);
-        const diff = (dB - dA) / (1000 * 60 * 60 * 24);
+
+      var allKeys = Object.keys(holidays).sort();
+      for (var i = 0; i < allKeys.length - 1; i++) {
+        var p1 = allKeys[i].split('-').map(Number);
+        var p2 = allKeys[i + 1].split('-').map(Number);
+        var dA = new Date(p1[0], p1[1] - 1, p1[2]);
+        var dB = new Date(p2[0], p2[1] - 1, p2[2]);
+        var diff = (dB - dA) / (1000 * 60 * 60 * 24);
         if (diff === 2) {
-          const mid = new Date(dA);
+          var mid = new Date(dA);
           mid.setDate(mid.getDate() + 1);
           if (mid.getDay() !== 0 && mid.getDay() !== 6) {
-            const mk = formatDateKey(mid);
+            var mk = formatDateKey(mid);
             if (!holidays[mk]) {
               holidays[mk] = '国民の休日';
             }
@@ -810,10 +793,10 @@
       }
       return holidays;
     }
-    // ===== ビュー切替 =====
+
     function switchView(view) {
       currentView = view;
-      document.querySelectorAll('.view-tab').forEach(t => {
+      document.querySelectorAll('.view-tab').forEach(function(t) {
         t.classList.toggle('active', t.dataset.view === view);
       });
       document.getElementById('monthView').classList.toggle('active', view === 'month');
@@ -851,245 +834,252 @@
       updatePeriodLabel();
     }
     function updatePeriodLabel() {
-      const label = document.getElementById('periodLabel');
+      var label = document.getElementById('periodLabel');
       if (currentView === 'month') {
         label.textContent = formatMonthLabel(currentDate);
       } else if (currentView === 'week') {
-        const start = getWeekStart(currentDate);
-        const end = new Date(start);
+        var start = getWeekStart(currentDate);
+        var end = new Date(start);
         end.setDate(end.getDate() + 6);
-        label.textContent = `${start.getMonth() + 1}/${start.getDate()} – ${end.getMonth() + 1}/${end.getDate()}`;
+        label.textContent = (start.getMonth() + 1) + '/' + start.getDate() + ' – ' + (end.getMonth() + 1) + '/' + end.getDate();
       } else {
         label.textContent = formatDisplayDate(selectedDate);
       }
     }
-    // ===== 月間レンダリング =====
+
     function renderMonth() {
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth();
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const startDayOfWeek = firstDay.getDay();
-      const daysInMonth = lastDay.getDate();
-      const prevMonthLast = new Date(year, month, 0).getDate();
-      const grid = document.getElementById('calendarGrid');
+      var year = currentDate.getFullYear();
+      var month = currentDate.getMonth();
+      var firstDay = new Date(year, month, 1);
+      var lastDay = new Date(year, month + 1, 0);
+      var startDayOfWeek = firstDay.getDay();
+      var daysInMonth = lastDay.getDate();
+      var prevMonthLast = new Date(year, month, 0).getDate();
+      var grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
-      const today = new Date();
-      const todayKey = formatDateKey(today);
-      const events = getEvents();
-      const holidays = getJapaneseHolidays(year);
-      // 前月の祝日も必要になることがあるので前後年も取得
-      const holidaysPrev = getJapaneseHolidays(year - 1);
-      const holidaysNext = getJapaneseHolidays(year + 1);
-      Object.assign(holidays, holidaysPrev, holidaysNext);
-      // 前月
-      for (let i = startDayOfWeek - 1; i >= 0; i--) {
-        const day = prevMonthLast - i;
-        const date = new Date(year, month - 1, day);
+      var today = new Date();
+      var todayKey = formatDateKey(today);
+      var events = getEvents();
+      var holidays = getJapaneseHolidays(year);
+      var holidaysPrev = getJapaneseHolidays(year - 1);
+      var holidaysNext = getJapaneseHolidays(year + 1);
+      Object.keys(holidaysPrev).forEach(function(k) { holidays[k] = holidaysPrev[k]; });
+      Object.keys(holidaysNext).forEach(function(k) { holidays[k] = holidaysNext[k]; });
+
+      for (var i = startDayOfWeek - 1; i >= 0; i--) {
+        var day = prevMonthLast - i;
+        var date = new Date(year, month - 1, day);
         grid.appendChild(createDayCell(date, true, todayKey, events, holidays));
       }
-      // 当月
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
+      for (var day = 1; day <= daysInMonth; day++) {
+        var date = new Date(year, month, day);
         grid.appendChild(createDayCell(date, false, todayKey, events, holidays));
       }
-      // 次月
-      const totalCells = startDayOfWeek + daysInMonth;
-      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
-      for (let day = 1; day <= remaining; day++) {
-        const date = new Date(year, month + 1, day);
+      var totalCells = startDayOfWeek + daysInMonth;
+      var remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (var day = 1; day <= remaining; day++) {
+        var date = new Date(year, month + 1, day);
         grid.appendChild(createDayCell(date, true, todayKey, events, holidays));
       }
-      // 今日の予定
       renderTodaySection();
     }
+
     function createDayCell(date, isOther, todayKey, events, holidays) {
-      const cell = document.createElement('div');
+      var cell = document.createElement('div');
       cell.className = 'day-cell';
       if (isOther) cell.classList.add('other-month');
       if (date.getDay() === 0) cell.classList.add('sunday');
       if (date.getDay() === 6) cell.classList.add('saturday');
-      const key = formatDateKey(date);
+      var key = formatDateKey(date);
       if (key === todayKey) cell.classList.add('today');
-      const holidayName = holidays[key];
+      var holidayName = holidays[key];
       if (holidayName) cell.classList.add('holiday');
-      const num = document.createElement('div');
+      var num = document.createElement('div');
       num.className = 'day-number';
       num.textContent = date.getDate();
       cell.appendChild(num);
-      // 予定 + 祝日名を表示
-      const dayEvents = events.filter(e => e.date === key);
-      const wrap = document.createElement('div');
+
+      var dayEvents = events.filter(function(e) { return e.date === key; });
+      var wrap = document.createElement('div');
       wrap.className = 'day-events';
-      let shown = 0;
-      const maxShow = 4;
+      var shown = 0;
+      var maxShow = 4;
       if (holidayName) {
-        const el = document.createElement('div');
+        var el = document.createElement('div');
         el.className = 'day-event-name holiday-name';
         el.textContent = holidayName;
         wrap.appendChild(el);
         shown++;
       }
-      dayEvents.slice(0, maxShow - shown).forEach(ev => {
-        const el = document.createElement('div');
+      dayEvents.slice(0, maxShow - shown).forEach(function(ev) {
+        var el = document.createElement('div');
         el.className = 'day-event-name';
         el.textContent = ev.title || '無題';
         wrap.appendChild(el);
         shown++;
       });
-      if (dayEvents.length > (maxShow - (holidayName ? 1 : 0))) {
-        const more = document.createElement('div');
+      var remainingEvents = dayEvents.length - (maxShow - (holidayName ? 1 : 0));
+      if (remainingEvents > 0) {
+        var more = document.createElement('div');
         more.className = 'day-event-name more';
-        more.textContent = `+${dayEvents.length - (maxShow - (holidayName ? 1 : 0))}`;
+        more.textContent = '+' + remainingEvents;
         wrap.appendChild(more);
       }
       if (shown > 0 || dayEvents.length > 0) {
         cell.appendChild(wrap);
       }
-      cell.onclick = () => {
+      cell.onclick = function() {
         selectedDate = new Date(date);
         currentDate = new Date(date);
         switchView('day');
       };
       return cell;
     }
+
     function renderTodaySection() {
-      const today = new Date();
-      const key = formatDateKey(today);
+      var today = new Date();
+      var key = formatDateKey(today);
       document.getElementById('todayDateLabel').textContent = formatDisplayDate(today);
-      const list = document.getElementById('todayEventsList');
-      const events = getEventsForDate(key);
+      var list = document.getElementById('todayEventsList');
+      var events = getEventsForDate(key);
       if (events.length === 0) {
-        list.innerHTML = `<div class="empty-state" style="padding:24px 0"><p>今日の予定はありません</p></div>`;
+        list.innerHTML = '<div class="empty-state" style="padding:24px 0"><p>今日の予定はありません</p></div>';
         return;
       }
-      list.innerHTML = events.map(ev => eventCardHtml(ev)).join('');
+      list.innerHTML = events.map(function(ev) { return eventCardHtml(ev); }).join('');
     }
-    // ===== 週間レンダリング =====
+
     function renderWeek() {
-      const start = getWeekStart(currentDate);
-      const todayKey = formatDateKey(new Date());
-      const events = getEvents();
-      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-      // 曜日ごとの色（日〜土）
-      const dayColors = [
-        'rgba(255, 59, 48, 0.90)', // 日 赤
-        'rgba(255, 149, 0, 0.90)', // 月 オレンジ
-        'rgba(255, 179, 0, 0.92)', // 火 黄オレンジ
-        'rgba(52, 199, 89, 0.90)', // 水 緑
-        'rgba(50, 173, 230, 0.90)', // 木 水色
-        'rgba(0, 122, 255, 0.90)', // 金 青
-        'rgba(175, 82, 222, 0.90)' // 土 紫
+      var start = getWeekStart(currentDate);
+      var todayKey = formatDateKey(new Date());
+      var events = getEvents();
+      var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      var dayColors = [
+        'rgba(255, 59, 48, 0.90)',
+        'rgba(255, 149, 0, 0.90)',
+        'rgba(255, 179, 0, 0.92)',
+        'rgba(52, 199, 89, 0.90)',
+        'rgba(50, 173, 230, 0.90)',
+        'rgba(0, 122, 255, 0.90)',
+        'rgba(175, 82, 222, 0.90)'
       ];
-      const HOUR_START = 7; // 7:00
-      const HOUR_END = 21; // 21:00
-      const HOUR_COUNT = HOUR_END - HOUR_START; // 14 → 実際は15行分（7〜21）
-      const ROW_H = 48;
-      // ヘッダー
-      let headerHtml = '<div style="width:48px"></div>';
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
+      var HOUR_START = 7;
+      var HOUR_END = 21;
+      var HOUR_COUNT = HOUR_END - HOUR_START;
+      var ROW_H = 48;
+
+      var headerHtml = '<div style="width:48px"></div>';
+      for (var i = 0; i < 7; i++) {
+        var d = new Date(start);
         d.setDate(d.getDate() + i);
-        const key = formatDateKey(d);
-        const isToday = key === todayKey;
-        const isSun = d.getDay() === 0;
-        const isSat = d.getDay() === 6;
-        let cls = 'week-day-header';
+        var key = formatDateKey(d);
+        var isToday = key === todayKey;
+        var isSun = d.getDay() === 0;
+        var isSat = d.getDay() === 6;
+        var cls = 'week-day-header';
         if (isToday) cls += ' today';
         if (isSun) cls += ' sunday';
         if (isSat) cls += ' saturday';
-        headerHtml += `
-          <div class="${cls}" onclick="selectedDate=new Date('${key}');switchView('day')">
-            <div class="week-day-name">${weekdays[d.getDay()]}</div>
-            <div class="week-day-num">${d.getDate()}</div>
-          </div>`;
+        headerHtml += '<div class="' + cls + '" data-date="' + key + '">' +
+          '<div class="week-day-name">' + weekdays[d.getDay()] + '</div>' +
+          '<div class="week-day-num">' + d.getDate() + '</div></div>';
       }
       document.getElementById('weekHeader').innerHTML = headerHtml;
-      // ボディ（7:00〜21:00）
-      let bodyHtml = '<div class="time-labels">';
-      for (let h = HOUR_START; h <= HOUR_END; h++) {
-        bodyHtml += `<div class="time-label">${h}:00</div>`;
+      document.querySelectorAll('#weekHeader .week-day-header').forEach(function(el) {
+        el.onclick = function() {
+          selectedDate = new Date(el.getAttribute('data-date') + 'T12:00:00');
+          switchView('day');
+        };
+      });
+
+      var bodyHtml = '<div class="time-labels">';
+      for (var h = HOUR_START; h <= HOUR_END; h++) {
+        bodyHtml += '<div class="time-label">' + h + ':00</div>';
       }
       bodyHtml += '</div>';
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
+      for (var i = 0; i < 7; i++) {
+        var d = new Date(start);
         d.setDate(d.getDate() + i);
-        const key = formatDateKey(d);
-        const dayEvents = events.filter(e => e.date === key);
-        const color = dayColors[d.getDay()];
-        bodyHtml += `<div class="week-col" data-date="${key}">`;
-        for (let h = 0; h <= HOUR_COUNT; h++) {
-          bodyHtml += `<div class="hour-line" style="top:${h * ROW_H}px"></div>`;
+        var key = formatDateKey(d);
+        var dayEvents = events.filter(function(e) { return e.date === key; });
+        var color = dayColors[d.getDay()];
+        bodyHtml += '<div class="week-col" data-date="' + key + '">';
+        for (var h = 0; h <= HOUR_COUNT; h++) {
+          bodyHtml += '<div class="hour-line" style="top:' + (h * ROW_H) + 'px"></div>';
         }
-        dayEvents.forEach(ev => {
-          let [sh, sm] = (ev.start || '09:00').split(':').map(Number);
-          let [eh, em] = (ev.end || '10:00').split(':').map(Number);
-          // 表示範囲外はクリップ
+        dayEvents.forEach(function(ev) {
+          var startParts = (ev.start || '09:00').split(':').map(Number);
+          var endParts = (ev.end || '10:00').split(':').map(Number);
+          var sh = startParts[0], sm = startParts[1];
+          var eh = endParts[0], em = endParts[1];
           if (eh < HOUR_START || sh > HOUR_END) return;
           if (sh < HOUR_START) { sh = HOUR_START; sm = 0; }
           if (eh > HOUR_END) { eh = HOUR_END; em = 0; }
-          const top = ((sh - HOUR_START) + sm / 60) * ROW_H;
-          let height = ((eh + em / 60) - (sh + sm / 60)) * ROW_H;
+          var top = ((sh - HOUR_START) + sm / 60) * ROW_H;
+          var height = ((eh + em / 60) - (sh + sm / 60)) * ROW_H;
           if (height < 18) height = 18;
-          bodyHtml += `
-            <div class="week-event" style="top:${top}px;height:${height}px;background:${color}"
-                 onclick="event.stopPropagation();openEditModal('${ev.id}')">
-              <div class="week-event-title">${escapeHtml(ev.title || '無題')}</div>
-            </div>`;
+          bodyHtml += '<div class="week-event" style="top:' + top + 'px;height:' + height + 'px;background:' + color + '" data-id="' + ev.id + '">' +
+            '<div class="week-event-title">' + escapeHtml(ev.title || '無題') + '</div></div>';
         });
         bodyHtml += '</div>';
       }
       document.getElementById('weekBody').innerHTML = bodyHtml;
+      document.querySelectorAll('#weekBody .week-event').forEach(function(el) {
+        el.onclick = function(e) {
+          e.stopPropagation();
+          openEditModal(el.getAttribute('data-id'));
+        };
+      });
     }
-    // ===== 1日レンダリング =====
+
     function renderDay() {
       document.getElementById('dayViewDate').textContent = formatDisplayDate(selectedDate);
-      const key = formatDateKey(selectedDate);
-      const events = getEventsForDate(key);
-      const list = document.getElementById('dayEventsList');
+      var key = formatDateKey(selectedDate);
+      var events = getEventsForDate(key);
+      var list = document.getElementById('dayEventsList');
       if (events.length === 0) {
-        list.innerHTML = `
-          <div class="empty-state">
-            <p>予定はありません</p>
-            <p style="font-size:13px">右下の＋で追加できます</p>
-          </div>`;
+        list.innerHTML = '<div class="empty-state"><p>予定はありません</p><p style="font-size:13px">右下の＋で追加できます</p></div>';
         return;
       }
-      list.innerHTML = events.map(ev => eventCardHtml(ev)).join('');
+      list.innerHTML = events.map(function(ev) { return eventCardHtml(ev); }).join('');
     }
+
     function eventCardHtml(ev) {
-      const mediaHtml = (ev.media || []).map(m => {
-        if (m.type === 'image') return `<img src="${m.dataUrl}" alt="">`;
-        return `<video src="${m.dataUrl}" muted></video>`;
+      var mediaHtml = (ev.media || []).map(function(m) {
+        if (m.type === 'image') return '<img src="' + m.dataUrl + '" alt="">';
+        return '<video src="' + m.dataUrl + '" muted></video>';
       }).join('');
-      const addressHtml = ev.address
-        ? `<div class="event-address" onclick="event.stopPropagation();openMaps('${String(ev.address).replace(/'/g, "\\'")}')">📍 ${escapeHtml(ev.address)}</div>`
+      var addressHtml = ev.address
+        ? '<div class="event-address" data-address="' + escapeAttr(ev.address) + '">📍 ' + escapeHtml(ev.address) + '</div>'
         : '';
-      return `
-        <div class="event-card" onclick="openEditModal('${ev.id}')">
-          <div class="event-time">${ev.start || ''} – ${ev.end || ''}</div>
-          <div class="event-title">${escapeHtml(ev.title || '無題')}</div>
-          ${addressHtml}
-          ${ev.content ? `<div class="event-content">${escapeHtml(ev.content)}</div>` : ''}
-          ${mediaHtml ? `<div class="event-media">${mediaHtml}</div>` : ''}
-        </div>`;
+      return '<div class="event-card" data-id="' + ev.id + '">' +
+        '<div class="event-time">' + (ev.start || '') + ' – ' + (ev.end || '') + '</div>' +
+        '<div class="event-title">' + escapeHtml(ev.title || '無題') + '</div>' +
+        addressHtml +
+        (ev.content ? '<div class="event-content">' + escapeHtml(ev.content) + '</div>' : '') +
+        (mediaHtml ? '<div class="event-media">' + mediaHtml + '</div>' : '') +
+        '</div>';
     }
+
     function escapeHtml(str) {
-      const div = document.createElement('div');
+      var div = document.createElement('div');
       div.textContent = str || '';
       return div.innerHTML;
     }
-    function openMaps(address) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+    function escapeAttr(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;');
     }
-    // ===== モーダル =====
+    function openMaps(address) {
+      window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address), '_blank');
+    }
+
     function openAddModal() {
       editingEventId = null;
       tempMedia = [];
       document.getElementById('modalTitle').textContent = '新規予定';
       document.querySelector('.modal-save').textContent = '追加';
       document.getElementById('deleteBtn').style.display = 'none';
-      const baseDate = currentView === 'day' ? selectedDate : (currentView === 'week' ? currentDate : new Date());
+      var baseDate = currentView === 'day' ? selectedDate : (currentView === 'week' ? currentDate : new Date());
       document.getElementById('eventDate').value = formatDateKey(baseDate);
       document.getElementById('eventTitle').value = '';
       document.getElementById('eventStart').value = '09:00';
@@ -1100,11 +1090,11 @@
       document.getElementById('modalOverlay').classList.add('active');
     }
     function openEditModal(id) {
-      const events = getEvents();
-      const ev = events.find(e => e.id === id);
+      var events = getEvents();
+      var ev = events.find(function(e) { return e.id === id; });
       if (!ev) return;
       editingEventId = id;
-      tempMedia = [...(ev.media || [])];
+      tempMedia = (ev.media || []).slice();
       document.getElementById('modalTitle').textContent = '予定を編集';
       document.querySelector('.modal-save').textContent = '保存';
       document.getElementById('deleteBtn').style.display = 'block';
@@ -1122,12 +1112,12 @@
       tempMedia = [];
     }
     function saveEvent() {
-      const title = document.getElementById('eventTitle').value.trim();
-      const date = document.getElementById('eventDate').value;
-      const start = document.getElementById('eventStart').value;
-      const end = document.getElementById('eventEnd').value;
-      const address = document.getElementById('eventAddress').value.trim();
-      const content = document.getElementById('eventContent').value.trim();
+      var title = document.getElementById('eventTitle').value.trim();
+      var date = document.getElementById('eventDate').value;
+      var start = document.getElementById('eventStart').value;
+      var end = document.getElementById('eventEnd').value;
+      var address = document.getElementById('eventAddress').value.trim();
+      var content = document.getElementById('eventContent').value.trim();
       if (!date) {
         alert('日付を選択してください');
         return;
@@ -1136,26 +1126,35 @@
         alert('何か入力してください');
         return;
       }
-      const events = getEvents();
+      var events = getEvents();
       if (editingEventId) {
-        const idx = events.findIndex(e => e.id === editingEventId);
+        var idx = events.findIndex(function(e) { return e.id === editingEventId; });
         if (idx !== -1) {
           events[idx] = {
-            ...events[idx],
-            date, title, start, end, address, content,
+            id: events[idx].id,
+            date: date,
+            title: title,
+            start: start,
+            end: end,
+            address: address,
+            content: content,
             media: tempMedia
           };
         }
       } else {
         events.push({
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-          date, title, start, end, address, content,
+          date: date,
+          title: title,
+          start: start,
+          end: end,
+          address: address,
+          content: content,
           media: tempMedia
         });
       }
       saveEvents(events);
       closeModal();
-      // 表示更新
       if (currentView === 'month') renderMonth();
       else if (currentView === 'week') renderWeek();
       else {
@@ -1165,16 +1164,16 @@
     }
     function deleteEvent() {
       if (!confirm('この予定を削除しますか？')) return;
-      const events = getEvents().filter(e => e.id !== editingEventId);
+      var events = getEvents().filter(function(e) { return e.id !== editingEventId; });
       saveEvents(events);
       closeModal();
       if (currentView === 'month') renderMonth();
       else if (currentView === 'week') renderWeek();
       else renderDay();
     }
-    // ===== カメラ・メディア =====
+
     function capturePhoto() {
-      const input = document.createElement('input');
+      var input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
       input.capture = 'environment';
@@ -1182,7 +1181,7 @@
       input.click();
     }
     function captureVideo() {
-      const input = document.createElement('input');
+      var input = document.createElement('input');
       input.type = 'file';
       input.accept = 'video/*';
       input.capture = 'environment';
@@ -1193,15 +1192,15 @@
       document.getElementById('fileInput').click();
     }
     function handleFiles(e) {
-      const files = Array.from(e.target.files || []);
-      files.forEach(file => {
+      var files = Array.from(e.target.files || []);
+      files.forEach(function(file) {
         if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return;
         if (file.size > 5 * 1024 * 1024) {
           alert('ファイルが大きすぎます（5MB以下にしてください）');
           return;
         }
-        const reader = new FileReader();
-        reader.onload = (ev) => {
+        var reader = new FileReader();
+        reader.onload = function(ev) {
           tempMedia.push({
             type: file.type.startsWith('image/') ? 'image' : 'video',
             dataUrl: ev.target.result
@@ -1213,21 +1212,37 @@
       e.target.value = '';
     }
     function renderMediaPreview() {
-      const preview = document.getElementById('mediaPreview');
-      preview.innerHTML = tempMedia.map((m, i) => `
-        <div class="media-item">
-          ${m.type === 'image'
-            ? `<img src="${m.dataUrl}" alt="">`
-            : `<video src="${m.dataUrl}" muted></video>`}
-          <button class="media-remove" onclick="removeMedia(${i})">×</button>
-        </div>
-      `).join('');
+      var preview = document.getElementById('mediaPreview');
+      preview.innerHTML = tempMedia.map(function(m, i) {
+        return '<div class="media-item">' +
+          (m.type === 'image' ? '<img src="' + m.dataUrl + '" alt="">' : '<video src="' + m.dataUrl + '" muted></video>') +
+          '<button class="media-remove" data-index="' + i + '">×</button></div>';
+      }).join('');
+      preview.querySelectorAll('.media-remove').forEach(function(btn) {
+        btn.onclick = function() {
+          removeMedia(parseInt(btn.getAttribute('data-index'), 10));
+        };
+      });
     }
     function removeMedia(index) {
       tempMedia.splice(index, 1);
       renderMediaPreview();
     }
-    // ===== 初期化 =====
+
+    // イベント委譲（カード・住所クリック）
+    document.addEventListener('click', function(e) {
+      var card = e.target.closest('.event-card');
+      if (card && !e.target.closest('.event-address')) {
+        openEditModal(card.getAttribute('data-id'));
+        return;
+      }
+      var addr = e.target.closest('.event-address');
+      if (addr) {
+        e.stopPropagation();
+        openMaps(addr.getAttribute('data-address'));
+      }
+    });
+
     switchView('month');
   </script>
 </body>
