@@ -280,53 +280,6 @@
       font-size: 20px; flex-shrink: 0;
     }
     .map-picker-item .sub { font-size: 12px; color: #8e8e93; font-weight: 400; margin-top: 2px; }
-
-    .settings-btn {
-      margin-left: auto; background: #f2f2f7; border: none; color: #007aff;
-      font-size: 13px; font-weight: 500; padding: 5px 10px; border-radius: 8px; cursor: pointer;
-    }
-    .settings-btn:active { background: #e5e5ea; }
-    .notify-list { padding: 0 16px 20px; }
-    .notify-toggle-row {
-      display: flex; align-items: center; justify-content: space-between;
-      background: #fff; margin: 12px 16px; border-radius: 12px; padding: 14px 16px;
-    }
-    .notify-toggle-label { font-size: 16px; font-weight: 500; }
-    .notify-switch {
-      position: relative; width: 51px; height: 31px; flex-shrink: 0;
-    }
-    .notify-switch input { opacity: 0; width: 0; height: 0; }
-    .notify-slider {
-      position: absolute; cursor: pointer; inset: 0; background: #e5e5ea;
-      border-radius: 31px; transition: 0.2s;
-    }
-    .notify-slider:before {
-      content: ''; position: absolute; height: 27px; width: 27px; left: 2px; bottom: 2px;
-      background: #fff; border-radius: 50%; transition: 0.2s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    .notify-switch input:checked + .notify-slider { background: #34c759; }
-    .notify-switch input:checked + .notify-slider:before { transform: translateX(20px); }
-    .notify-section-title {
-      font-size: 13px; color: #8e8e93; font-weight: 500; margin: 8px 16px 6px; padding-left: 4px;
-    }
-    .notify-option {
-      display: flex; align-items: center; gap: 12px;
-      background: #fff; padding: 14px 16px;
-      border-bottom: 0.5px solid rgba(0,0,0,0.07);
-      cursor: pointer; -webkit-user-select: none; user-select: none;
-    }
-    .notify-option:first-child { border-radius: 12px 12px 0 0; }
-    .notify-option:last-child { border-radius: 0 0 12px 12px; border-bottom: none; }
-    .notify-option input { width: 20px; height: 20px; accent-color: #007aff; }
-    .notify-option span { font-size: 16px; }
-    .notify-hint {
-      font-size: 12px; color: #8e8e93; padding: 8px 20px 4px; line-height: 1.4;
-    }
-    .notify-test-btn {
-      width: calc(100% - 32px); margin: 12px 16px 8px; padding: 14px; border: none;
-      border-radius: 12px; background: #fff; color: #007aff; font-size: 16px; font-weight: 500; cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -335,7 +288,6 @@
       <div class="header-title">スケジュール</div>
       <div class="header-actions">
         <button class="today-btn" onclick="goToToday()">今日</button>
-        <button class="today-btn" onclick="openSettings()" title="設定">⚙️</button>
         <button class="media-header-btn" onclick="openGallery()" title="写真・動画">📷🎥</button>
       </div>
     </div>
@@ -449,32 +401,6 @@
   </div>
 
 
-
-  <!-- 通知設定 -->
-  <div class="modal-overlay" id="settingsOverlay">
-    <div class="modal">
-      <div class="modal-header">
-        <button class="modal-close" onclick="closeSettings()">閉じる</button>
-        <div class="modal-title">通知設定</div>
-        <button class="modal-save" onclick="saveSettings()">保存</button>
-      </div>
-      <p class="notify-hint">予定の開始時刻を基準に、選んだタイミングで通知します（複数選択可）。このページを開いている間、またはホーム画面に追加した状態で動作します。</p>
-      <div class="notify-toggle-row">
-        <div class="notify-toggle-label">通知を使う</div>
-        <label class="notify-switch">
-          <input type="checkbox" id="notifyEnabled">
-          <span class="notify-slider"></span>
-        </label>
-      </div>
-      <div class="notify-section-title">通知タイミング（複数選択可）</div>
-      <div class="form-group" style="margin-top:0">
-        <div class="notify-list" id="notifyOptions" style="padding:0"></div>
-      </div>
-      <button type="button" class="notify-test-btn" onclick="testNotification()">テスト通知を送る</button>
-      <p class="notify-hint" style="padding-bottom:24px">※ブラウザの通知許可が必要です。iPhoneでは「ホーム画面に追加」したあと、通知が安定しやすいです。</p>
-    </div>
-  </div>
-
   <!-- マップアプリ選択 -->
   <div class="modal-overlay" id="mapPickerOverlay">
     <div class="modal">
@@ -503,21 +429,6 @@
     var tempMedia = [];
     var galleryMode = 'date';
     var isCopying = false;
-    var notifyCheckTimer = null;
-    var NOTIFY_OPTIONS = [
-      { label: '1日前', minutes: 24 * 60 },
-      { label: '12時間前', minutes: 12 * 60 },
-      { label: '5時間前', minutes: 5 * 60 },
-      { label: '3時間前', minutes: 3 * 60 },
-      { label: '2時間前', minutes: 2 * 60 },
-      { label: '1時間前', minutes: 60 },
-      { label: '30分前', minutes: 30 },
-      { label: '15分前', minutes: 15 },
-      { label: '10分前', minutes: 10 },
-      { label: '5分前', minutes: 5 },
-      { label: '0分前（開始時）', minutes: 0 }
-    ];
-
     var currentLightboxItem = null;
     var swipeState = { startX: 0, startY: 0, currentX: 0, activeCard: null, moved: false };
 
@@ -1577,192 +1488,6 @@
       }
     });
 
-
-    // ===== 通知設定 =====
-    function getNotifySettings() {
-      try {
-        var s = JSON.parse(localStorage.getItem('schedule_notify_settings') || 'null');
-        if (!s) {
-          return { enabled: false, offsets: [60, 30, 10, 0] };
-        }
-        return s;
-      } catch (e) {
-        return { enabled: false, offsets: [60, 30, 10, 0] };
-      }
-    }
-    function setNotifySettings(s) {
-      localStorage.setItem('schedule_notify_settings', JSON.stringify(s));
-    }
-    function getFiredNotifications() {
-      try {
-        return JSON.parse(localStorage.getItem('schedule_notify_fired') || '{}');
-      } catch (e) { return {}; }
-    }
-    function setFiredNotifications(map) {
-      // 古いキーを掃除（7日以上前）
-      var now = Date.now();
-      Object.keys(map).forEach(function(k) {
-        if (now - (map[k] || 0) > 7 * 24 * 60 * 60 * 1000) delete map[k];
-      });
-      localStorage.setItem('schedule_notify_fired', JSON.stringify(map));
-    }
-    function openSettings() {
-      var s = getNotifySettings();
-      document.getElementById('notifyEnabled').checked = !!s.enabled;
-      var box = document.getElementById('notifyOptions');
-      var selected = {};
-      (s.offsets || []).forEach(function(m) { selected[m] = true; });
-      box.innerHTML = NOTIFY_OPTIONS.map(function(opt) {
-        var checked = selected[opt.minutes] ? ' checked' : '';
-        return '<label class="notify-option">' +
-          '<input type="checkbox" data-minutes="' + opt.minutes + '"' + checked + '>' +
-          '<span>' + opt.label + '</span></label>';
-      }).join('');
-      document.getElementById('settingsOverlay').classList.add('active');
-    }
-    function closeSettings() {
-      document.getElementById('settingsOverlay').classList.remove('active');
-    }
-    function saveSettings() {
-      var enabled = document.getElementById('notifyEnabled').checked;
-      var offsets = [];
-      document.querySelectorAll('#notifyOptions input[type=checkbox]').forEach(function(cb) {
-        if (cb.checked) offsets.push(parseInt(cb.getAttribute('data-minutes'), 10));
-      });
-      offsets.sort(function(a, b) { return b - a; });
-      if (enabled && offsets.length === 0) {
-        alert('通知タイミングを1つ以上選んでください');
-        return;
-      }
-      if (enabled) {
-        requestNotifyPermission().then(function(ok) {
-          if (!ok) {
-            alert('通知が許可されませんでした。端末の設定からブラウザの通知を許可してください。');
-            enabled = false;
-            document.getElementById('notifyEnabled').checked = false;
-          }
-          setNotifySettings({ enabled: enabled, offsets: offsets });
-          closeSettings();
-          startNotifyWatcher();
-          if (enabled) alert('通知設定を保存しました');
-        });
-      } else {
-        setNotifySettings({ enabled: false, offsets: offsets });
-        closeSettings();
-        startNotifyWatcher();
-      }
-    }
-    function requestNotifyPermission() {
-      return new Promise(function(resolve) {
-        if (!('Notification' in window)) {
-          resolve(false);
-          return;
-        }
-        if (Notification.permission === 'granted') {
-          resolve(true);
-          return;
-        }
-        if (Notification.permission === 'denied') {
-          resolve(false);
-          return;
-        }
-        Notification.requestPermission().then(function(p) {
-          resolve(p === 'granted');
-        }).catch(function() { resolve(false); });
-      });
-    }
-    function testNotification() {
-      requestNotifyPermission().then(function(ok) {
-        if (!ok) {
-          alert('通知が許可されていません');
-          return;
-        }
-        showNotification('スケジュール', 'テスト通知です。設定は正常に動作しています。');
-      });
-    }
-    function showNotification(title, body) {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-      try {
-        var n = new Notification(title, {
-          body: body,
-          icon: undefined,
-          tag: 'schedule-' + Date.now(),
-          requireInteraction: false
-        });
-        n.onclick = function() {
-          window.focus();
-          n.close();
-        };
-        setTimeout(function() { try { n.close(); } catch (e) {} }, 12000);
-      } catch (e) {
-        console.warn(e);
-      }
-    }
-    function eventStartDate(ev) {
-      if (!ev || !ev.date) return null;
-      var t = ev.start || '09:00';
-      var parts = t.split(':');
-      var h = parseInt(parts[0], 10) || 0;
-      var m = parseInt(parts[1], 10) || 0;
-      var d = new Date(ev.date + 'T00:00:00');
-      if (isNaN(d.getTime())) return null;
-      d.setHours(h, m, 0, 0);
-      return d;
-    }
-    function checkNotifications() {
-      var s = getNotifySettings();
-      if (!s.enabled || !s.offsets || !s.offsets.length) return;
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-      var events = getEvents();
-      var now = Date.now();
-      var fired = getFiredNotifications();
-      var changed = false;
-      // 許容ウィンドウ: チェッカー間隔より少し広め（90秒）
-      var windowMs = 90 * 1000;
-      events.forEach(function(ev) {
-        var start = eventStartDate(ev);
-        if (!start) return;
-        var startMs = start.getTime();
-        s.offsets.forEach(function(offsetMin) {
-          var fireAt = startMs - offsetMin * 60 * 1000;
-          var key = ev.id + '_' + offsetMin;
-          if (fired[key]) return;
-          if (now >= fireAt && now < fireAt + windowMs) {
-            var label = offsetMin === 0 ? 'まもなく開始' : (offsetMin >= 60
-              ? (offsetMin >= 1440 ? '1日前' : (offsetMin / 60) + '時間前')
-              : offsetMin + '分前');
-            // より正確なラベル
-            var opt = NOTIFY_OPTIONS.find(function(o) { return o.minutes === offsetMin; });
-            if (opt) label = opt.label;
-            var timeStr = (ev.start || '') + (ev.end ? ' – ' + ev.end : '');
-            var body = (ev.title || '無題') + (timeStr ? '\n' + timeStr : '');
-            if (ev.address) body += '\n📍 ' + ev.address;
-            showNotification('予定のお知らせ（' + label + '）', body);
-            fired[key] = now;
-            changed = true;
-          }
-          // 開始時刻を過ぎてウィンドウ外なら「発火済み」扱いにして再通知しない
-          if (now >= fireAt + windowMs && !fired[key] && now > startMs) {
-            fired[key] = now;
-            changed = true;
-          }
-        });
-      });
-      if (changed) setFiredNotifications(fired);
-    }
-    function startNotifyWatcher() {
-      if (notifyCheckTimer) {
-        clearInterval(notifyCheckTimer);
-        notifyCheckTimer = null;
-      }
-      var s = getNotifySettings();
-      if (!s.enabled) return;
-      checkNotifications();
-      notifyCheckTimer = setInterval(checkNotifications, 30 * 1000);
-    }
-
-
-    startNotifyWatcher();
     switchView('month');
   </script>
 </body>
