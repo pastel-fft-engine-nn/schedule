@@ -805,56 +805,81 @@
       pendingMapAddress = address;
       document.getElementById('mapPickerAddress').textContent = '📍 ' + address;
       var q = encodeURIComponent(address);
+      // アプリ優先のURL。未インストール時はフォールバックへ
       var apps = [
         {
           name: 'Google マップ',
-          sub: '経路・ストリートビュー',
+          sub: 'アプリ優先（未導入時はブラウザ）',
           icon: '🗺️',
           bg: '#e8f0fe',
-          url: 'https://www.google.com/maps/search/?api=1&query=' + q
+          appUrls: [
+            'comgooglemaps://?q=' + q,
+            'https://www.google.com/maps/search/?api=1&query=' + q
+          ]
         },
         {
           name: 'Apple マップ',
-          sub: 'iPhone / iPad 向け',
+          sub: 'iPhone / iPad',
           icon: '🍎',
           bg: '#f2f2f7',
-          url: 'https://maps.apple.com/?q=' + q
-        },
-        {
-          name: 'Yahoo!地図',
-          sub: 'Yahoo!カーナビ連携',
-          icon: '🟡',
-          bg: '#fff8e1',
-          url: 'https://map.yahoo.co.jp/maps?q=' + q
+          appUrls: [
+            'maps://?q=' + q,
+            'https://maps.apple.com/?q=' + q
+          ]
         },
         {
           name: 'Yahoo!カーナビ',
-          sub: 'アプリがインストールされている場合',
+          sub: 'アプリでルート設定',
           icon: '🚗',
           bg: '#fff3e0',
-          // ウェブ検索経由。アプリschemeは端末依存のため汎用URL
-          url: 'https://map.yahoo.co.jp/maps?q=' + q + '&mode=navi'
+          appUrls: [
+            // 公式URLスキーム（緯度経度が無い場合は名称検索相当のウェブへフォールバック）
+            'yjcarnavi://navi/select?name=' + q,
+            'https://map.yahoo.co.jp/maps?q=' + q
+          ]
         },
         {
-          name: 'NAVITIME',
-          sub: '乗換・徒歩・車',
+          name: 'Yahoo!地図',
+          sub: 'ブラウザ / アプリ連携',
+          icon: '🟡',
+          bg: '#fff8e1',
+          appUrls: [
+            'https://map.yahoo.co.jp/maps?q=' + q
+          ]
+        },
+        {
+          name: 'カーナビタイム',
+          sub: 'NAVITIME 車ナビアプリ',
           icon: '🟢',
           bg: '#e8f5e9',
-          url: 'https://www.navitime.co.jp/maps/search?keyword=' + q
+          appUrls: [
+            // NAVITIME系アプリのカスタムスキーム（インストール時に起動を試行）
+            'navitime://search?keyword=' + q,
+            'navitime://routesearch?goal=' + q,
+            // Android Intent（カーナビタイム）
+            'intent://search?keyword=' + q + '#Intent;scheme=navitime;package=jp.co.navitime.local.android.drive;S.browser_fallback_url=' + encodeURIComponent('https://www.navitime.co.jp/drive/') + ';end',
+            // 最終フォールバック：ストア / 公式
+            'https://www.navitime.co.jp/drive/'
+          ]
         },
         {
-          name: '乗換案内（NAVITIME）',
-          sub: '公共交通機関',
+          name: 'NAVITIME（乗換）',
+          sub: '公共交通・乗換案内アプリ',
           icon: '🚃',
           bg: '#e3f2fd',
-          url: 'https://www.navitime.co.jp/transfer/searchlist?orvName=' + q
+          appUrls: [
+            'navitime://search?keyword=' + q,
+            'https://www.navitime.co.jp/maps/search?keyword=' + q
+          ]
         },
         {
           name: '地理院地図',
-          sub: '国土地理院',
+          sub: '国土地理院（ブラウザ）',
           icon: '🗾',
           bg: '#f3e5f5',
-          url: 'https://maps.gsi.go.jp/#15/0/0/&q=' + q
+          appUrls: [
+            'https://maps.gsi.go.jp/#15/0/0/&q=' + q
+          ]
         }
       ];
       var list = document.getElementById('mapPickerList');
@@ -867,13 +892,46 @@
         btn.onclick = function() {
           var app = apps[parseInt(btn.getAttribute('data-idx'), 10)];
           closeMapPicker();
-          // 同一タブだと戻ってこられにくいので _blank
-          window.open(app.url, '_blank');
+          openAppOrFallback(app.appUrls);
         };
       });
       document.getElementById('mapPickerOverlay').classList.add('active');
     }
+    function openAppOrFallback(urls) {
+      if (!urls || !urls.length) return;
+      var tried = 0;
+      function tryNext() {
+        if (tried >= urls.length) return;
+        var url = urls[tried++];
+        // カスタムスキームは同一ウィンドウで試す（アプリ起動のため）
+        if (/^(comgooglemaps|maps|yjcarnavi|navitime|intent):/i.test(url)) {
+          var start = Date.now();
+          var hidden = false;
+          var onHide = function() { hidden = true; };
+          document.addEventListener('visibilitychange', onHide);
+          window.location.href = url;
+          setTimeout(function() {
+            document.removeEventListener('visibilitychange', onHide);
+            // アプリが起動して裏に回った場合は成功とみなす
+            if (hidden || document.hidden) return;
+            // 起動できなかった可能性 → 次を試す
+            if (tried < urls.length) {
+              var next = urls[tried++];
+              if (/^https?:/i.test(next)) {
+                window.open(next, '_blank');
+              } else {
+                window.location.href = next;
+              }
+            }
+          }, 1200);
+        } else {
+          window.open(url, '_blank');
+        }
+      }
+      tryNext();
+    }
     function closeMapPicker() {
+
       document.getElementById('mapPickerOverlay').classList.remove('active');
       pendingMapAddress = '';
     }
