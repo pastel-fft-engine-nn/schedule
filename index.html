@@ -18,7 +18,11 @@
     }
     .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .header-title { font-size: 17px; font-weight: 600; }
-    .today-btn { background: none; border: none; color: #007aff; font-size: 16px; cursor: pointer; padding: 4px 8px; }
+    .header-actions { display: flex; align-items: center; gap: 4px; }
+    .today-btn, .media-header-btn {
+      background: none; border: none; color: #007aff; font-size: 16px; cursor: pointer; padding: 4px 8px;
+    }
+    .media-header-btn { font-size: 15px; }
     .month-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .month-label { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
     .nav-arrows { display: flex; gap: 16px; }
@@ -65,24 +69,25 @@
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
     .today-section-title span { color: #007aff; font-weight: 500; font-size: 13px; }
-    .gallery-btn {
-      margin-left: auto; background: #f2f2f7; border: none; color: #007aff;
-      font-size: 13px; font-weight: 500; padding: 5px 10px; border-radius: 8px; cursor: pointer;
-    }
-    .gallery-btn:active { background: #e5e5ea; }
     .week-view { display: none; background: #fff; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .week-view.active { display: block; }
     .week-header {
       display: grid; grid-template-columns: 48px repeat(7, 1fr); border-bottom: 0.5px solid #e5e5ea;
       position: sticky; top: 0; background: #fff; z-index: 10;
     }
-    .week-day-header { text-align: center; padding: 8px 2px; border-left: 0.5px solid #e5e5ea; }
+    .week-day-header { text-align: center; padding: 6px 2px 8px; border-left: 0.5px solid #e5e5ea; min-height: 58px; }
     .week-day-name { font-size: 11px; color: #8e8e93; }
     .week-day-num { font-size: 18px; font-weight: 500; margin-top: 2px; }
+    .week-day-holiday {
+      font-size: 9px; color: #ff3b30; line-height: 1.2; margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 1px;
+    }
     .week-day-header.today .week-day-num {
       background: #007aff; color: #fff; width: 30px; height: 30px; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center; margin: 2px auto 0;
     }
+    .week-day-header.holiday .week-day-num { color: #ff3b30; }
+    .week-day-header.today.holiday .week-day-num { background: #ff3b30; color: #fff; }
     .week-day-header.sunday .week-day-name, .week-day-header.sunday .week-day-num { color: #ff3b30; }
     .week-day-header.saturday .week-day-name, .week-day-header.saturday .week-day-num { color: #007aff; }
     .week-day-header.today.sunday .week-day-num, .week-day-header.today.saturday .week-day-num { color: #fff; }
@@ -93,6 +98,7 @@
       padding-right: 6px; line-height: 1; position: relative; top: -6px;
     }
     .week-col { border-left: 0.5px solid #e5e5ea; position: relative; height: calc(48px * 15); }
+    .week-col.holiday-col { background: rgba(255, 59, 48, 0.04); }
     .hour-line { position: absolute; left: 0; right: 0; height: 0.5px; background: #e5e5ea; }
     .week-event {
       position: absolute; left: 2px; right: 2px; background: rgba(0, 122, 255, 0.85); color: #fff;
@@ -106,11 +112,21 @@
       border-bottom: 0.5px solid rgba(0,0,0,0.08);
     }
     .events-list { padding: 12px 16px; }
-    .event-card {
-      background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); cursor: pointer; position: relative;
+    .swipe-wrap {
+      position: relative; margin-bottom: 10px; border-radius: 12px; overflow: hidden;
     }
-    .event-card:active { transform: scale(0.985); }
+    .swipe-delete-bg {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 88px;
+      background: #ff3b30; display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 14px; font-weight: 600;
+    }
+    .event-card {
+      background: #fff; border-radius: 12px; padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); cursor: pointer; position: relative;
+      transition: transform 0.2s ease; touch-action: pan-y;
+    }
+    .event-card.swiping { transition: none; }
+    .event-card:active { /* scale handled carefully with swipe */ }
     .event-time { font-size: 13px; color: #8e8e93; margin-bottom: 4px; }
     .event-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; padding-right: 60px; }
     .event-address { font-size: 14px; color: #007aff; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
@@ -122,7 +138,7 @@
     .copy-btn {
       position: absolute; top: 12px; right: 12px;
       background: #f2f2f7; border: none; color: #007aff;
-      font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 8px; cursor: pointer;
+      font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 8px; cursor: pointer; z-index: 2;
     }
     .copy-btn:active { background: #e5e5ea; }
     .empty-state { text-align: center; padding: 48px 20px; color: #8e8e93; }
@@ -188,7 +204,6 @@
     }
     .month-view { display: none; }
     .month-view.active { display: block; }
-    /* ギャラリーモーダル */
     .gallery-modal .modal { max-height: 88vh; }
     .gallery-tabs {
       display: flex; background: #e5e5ea; border-radius: 9px; padding: 2px; margin: 12px 16px;
@@ -205,14 +220,14 @@
       display: flex; align-items: center; gap: 6px;
     }
     .gallery-group-title .count { color: #8e8e93; font-weight: 400; font-size: 12px; }
-    .gallery-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
-    }
+    .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
     .gallery-item {
-      aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #e5e5ea; cursor: pointer;
+      aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #e5e5ea; cursor: pointer; position: relative;
     }
-    .gallery-item img, .gallery-item video {
-      width: 100%; height: 100%; object-fit: cover; display: block;
+    .gallery-item img, .gallery-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gallery-item .vid-badge {
+      position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.55);
+      color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 4px;
     }
     .gallery-empty { text-align: center; padding: 40px 20px; color: #8e8e93; font-size: 15px; }
     .lightbox {
@@ -228,8 +243,10 @@
       border: none; color: #fff; font-size: 28px; width: 40px; height: 40px;
       border-radius: 50%; cursor: pointer; line-height: 1;
     }
-    .lightbox-info {
-      color: #fff; margin-top: 12px; font-size: 14px; text-align: center; padding: 0 16px;
+    .lightbox-info { color: #fff; margin-top: 12px; font-size: 14px; text-align: center; padding: 0 16px; }
+    .lightbox-save {
+      margin-top: 14px; background: rgba(255,255,255,0.18); border: none; color: #fff;
+      font-size: 14px; padding: 10px 18px; border-radius: 10px; cursor: pointer;
     }
     @media (min-width: 600px) {
       body { max-width: 430px; margin: 0 auto; border-left: 1px solid #e5e5ea; border-right: 1px solid #e5e5ea; }
@@ -240,7 +257,10 @@
   <div class="app-header">
     <div class="header-row">
       <div class="header-title">スケジュール</div>
-      <button class="today-btn" onclick="goToToday()">今日</button>
+      <div class="header-actions">
+        <button class="today-btn" onclick="goToToday()">今日</button>
+        <button class="media-header-btn" onclick="openGallery()" title="写真・動画">📷🎥</button>
+      </div>
     </div>
     <div class="month-nav">
       <div class="month-label" id="periodLabel">2026年8月</div>
@@ -271,7 +291,6 @@
       <div class="today-section-title">
         今日の予定
         <span id="todayDateLabel"></span>
-        <button type="button" class="gallery-btn" onclick="openGallery()">📷 写真</button>
       </div>
       <div id="todayEventsList"></div>
     </div>
@@ -289,7 +308,6 @@
 
   <button class="fab" onclick="openAddModal()">＋</button>
 
-  <!-- 予定追加・編集モーダル -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <div class="modal-header">
@@ -338,7 +356,6 @@
     </div>
   </div>
 
-  <!-- 写真ギャラリーモーダル -->
   <div class="modal-overlay gallery-modal" id="galleryOverlay">
     <div class="modal">
       <div class="modal-header">
@@ -354,11 +371,11 @@
     </div>
   </div>
 
-  <!-- ライトボックス -->
-  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
     <button class="lightbox-close" onclick="closeLightbox()">×</button>
     <div id="lightboxContent"></div>
     <div class="lightbox-info" id="lightboxInfo"></div>
+    <button type="button" class="lightbox-save" id="lightboxSaveBtn" onclick="event.stopPropagation();saveCurrentLightboxToDevice()">端末に保存</button>
   </div>
 
   <script>
@@ -369,13 +386,12 @@
     var tempMedia = [];
     var galleryMode = 'date';
     var isCopying = false;
+    var currentLightboxItem = null;
+    var swipeState = { startX: 0, startY: 0, currentX: 0, activeCard: null, moved: false };
 
     function getEvents() {
-      try {
-        return JSON.parse(localStorage.getItem('schedule_events') || '[]');
-      } catch (e) {
-        return [];
-      }
+      try { return JSON.parse(localStorage.getItem('schedule_events') || '[]'); }
+      catch (e) { return []; }
     }
     function saveEvents(events) {
       try {
@@ -383,7 +399,7 @@
         return true;
       } catch (e) {
         if (e.name === 'QuotaExceededError' || e.code === 22) {
-          alert('保存容量がいっぱいです。\n写真の枚数を減らすか、古い予定を削除してください。');
+          alert('保存容量がいっぱいです。\n写真・動画の枚数を減らすか、古い予定を削除してください。');
         } else {
           alert('保存に失敗しました: ' + (e.message || e));
         }
@@ -433,8 +449,7 @@
     function getJapaneseHolidays(year) {
       var holidays = {};
       function add(m, d, name) {
-        var key = year + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-        holidays[key] = name;
+        holidays[year + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0')] = name;
       }
       add(1, 1, '元日');
       add(2, 11, '建国記念の日');
@@ -453,8 +468,7 @@
       add(3, getVernalEquinox(year), '春分の日');
       add(9, getAutumnalEquinox(year), '秋分の日');
 
-      var keys = Object.keys(holidays).sort();
-      keys.forEach(function(key) {
+      Object.keys(holidays).sort().forEach(function(key) {
         var parts = key.split('-').map(Number);
         var dt = new Date(parts[0], parts[1] - 1, parts[2]);
         if (dt.getDay() === 0) {
@@ -462,10 +476,7 @@
           next.setDate(next.getDate() + 1);
           while (true) {
             var nk = formatDateKey(next);
-            if (!holidays[nk]) {
-              holidays[nk] = '振替休日';
-              break;
-            }
+            if (!holidays[nk]) { holidays[nk] = '振替休日'; break; }
             next.setDate(next.getDate() + 1);
           }
         }
@@ -477,8 +488,7 @@
         var p2 = allKeys[i + 1].split('-').map(Number);
         var dA = new Date(p1[0], p1[1] - 1, p1[2]);
         var dB = new Date(p2[0], p2[1] - 1, p2[2]);
-        var diff = (dB - dA) / (1000 * 60 * 60 * 24);
-        if (diff === 2) {
+        if ((dB - dA) / 86400000 === 2) {
           var mid = new Date(dA);
           mid.setDate(mid.getDate() + 1);
           if (mid.getDay() !== 0 && mid.getDay() !== 6) {
@@ -527,16 +537,13 @@
     }
     function updatePeriodLabel() {
       var label = document.getElementById('periodLabel');
-      if (currentView === 'month') {
-        label.textContent = formatMonthLabel(currentDate);
-      } else if (currentView === 'week') {
+      if (currentView === 'month') label.textContent = formatMonthLabel(currentDate);
+      else if (currentView === 'week') {
         var start = getWeekStart(currentDate);
         var end = new Date(start);
         end.setDate(end.getDate() + 6);
         label.textContent = (start.getMonth() + 1) + '/' + start.getDate() + ' – ' + (end.getMonth() + 1) + '/' + end.getDate();
-      } else {
-        label.textContent = formatDisplayDate(selectedDate);
-      }
+      } else label.textContent = formatDisplayDate(selectedDate);
     }
 
     function renderMonth() {
@@ -549,18 +556,15 @@
       var prevMonthLast = new Date(year, month, 0).getDate();
       var grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
-      var today = new Date();
-      var todayKey = formatDateKey(today);
+      var todayKey = formatDateKey(new Date());
       var events = getEvents();
       var holidays = getJapaneseHolidays(year);
-      var holidaysPrev = getJapaneseHolidays(year - 1);
-      var holidaysNext = getJapaneseHolidays(year + 1);
-      Object.keys(holidaysPrev).forEach(function(k) { holidays[k] = holidaysPrev[k]; });
-      Object.keys(holidaysNext).forEach(function(k) { holidays[k] = holidaysNext[k]; });
+      var hp = getJapaneseHolidays(year - 1), hn = getJapaneseHolidays(year + 1);
+      Object.keys(hp).forEach(function(k) { holidays[k] = hp[k]; });
+      Object.keys(hn).forEach(function(k) { holidays[k] = hn[k]; });
 
       for (var i = startDayOfWeek - 1; i >= 0; i--) {
-        var day = prevMonthLast - i;
-        grid.appendChild(createDayCell(new Date(year, month - 1, day), true, todayKey, events, holidays));
+        grid.appendChild(createDayCell(new Date(year, month - 1, prevMonthLast - i), true, todayKey, events, holidays));
       }
       for (var day = 1; day <= daysInMonth; day++) {
         grid.appendChild(createDayCell(new Date(year, month, day), false, todayKey, events, holidays));
@@ -591,8 +595,7 @@
       var dayEvents = events.filter(function(e) { return e.date === key; });
       var wrap = document.createElement('div');
       wrap.className = 'day-events';
-      var shown = 0;
-      var maxShow = 4;
+      var shown = 0, maxShow = 4;
       if (holidayName) {
         var el = document.createElement('div');
         el.className = 'day-event-name holiday-name';
@@ -607,11 +610,11 @@
         wrap.appendChild(el);
         shown++;
       });
-      var remainingEvents = dayEvents.length - (maxShow - (holidayName ? 1 : 0));
-      if (remainingEvents > 0) {
+      var rem = dayEvents.length - (maxShow - (holidayName ? 1 : 0));
+      if (rem > 0) {
         var more = document.createElement('div');
         more.className = 'day-event-name more';
-        more.textContent = '+' + remainingEvents;
+        more.textContent = '+' + rem;
         wrap.appendChild(more);
       }
       if (shown > 0 || dayEvents.length > 0) cell.appendChild(wrap);
@@ -624,10 +627,9 @@
     }
 
     function renderTodaySection() {
-      var today = new Date();
-      document.getElementById('todayDateLabel').textContent = formatDisplayDate(today);
+      document.getElementById('todayDateLabel').textContent = formatDisplayDate(new Date());
       var list = document.getElementById('todayEventsList');
-      var events = getEventsForDate(formatDateKey(today));
+      var events = getEventsForDate(formatDateKey(new Date()));
       if (events.length === 0) {
         list.innerHTML = '<div class="empty-state" style="padding:24px 0"><p>今日の予定はありません</p></div>';
         return;
@@ -639,6 +641,11 @@
       var start = getWeekStart(currentDate);
       var todayKey = formatDateKey(new Date());
       var events = getEvents();
+      var year = start.getFullYear();
+      var holidays = getJapaneseHolidays(year);
+      var hn = getJapaneseHolidays(year + 1), hp = getJapaneseHolidays(year - 1);
+      Object.keys(hp).forEach(function(k) { holidays[k] = hp[k]; });
+      Object.keys(hn).forEach(function(k) { holidays[k] = hn[k]; });
       var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
       var dayColors = [
         'rgba(255, 59, 48, 0.90)', 'rgba(255, 149, 0, 0.90)', 'rgba(255, 179, 0, 0.92)',
@@ -651,13 +658,17 @@
         var d = new Date(start);
         d.setDate(d.getDate() + i);
         var key = formatDateKey(d);
+        var hName = holidays[key];
         var cls = 'week-day-header';
         if (key === todayKey) cls += ' today';
         if (d.getDay() === 0) cls += ' sunday';
         if (d.getDay() === 6) cls += ' saturday';
+        if (hName) cls += ' holiday';
         headerHtml += '<div class="' + cls + '" data-date="' + key + '">' +
           '<div class="week-day-name">' + weekdays[d.getDay()] + '</div>' +
-          '<div class="week-day-num">' + d.getDate() + '</div></div>';
+          '<div class="week-day-num">' + d.getDate() + '</div>' +
+          (hName ? '<div class="week-day-holiday">' + escapeHtml(hName) + '</div>' : '') +
+          '</div>';
       }
       document.getElementById('weekHeader').innerHTML = headerHtml;
       document.querySelectorAll('#weekHeader .week-day-header').forEach(function(el) {
@@ -678,7 +689,8 @@
         var key = formatDateKey(d);
         var dayEvents = events.filter(function(e) { return e.date === key; });
         var color = dayColors[d.getDay()];
-        bodyHtml += '<div class="week-col" data-date="' + key + '">';
+        var colCls = holidays[key] ? ' week-col holiday-col' : ' week-col';
+        bodyHtml += '<div class="' + colCls.trim() + '" data-date="' + key + '">';
         for (var h = 0; h <= HOUR_COUNT; h++) {
           bodyHtml += '<div class="hour-line" style="top:' + (h * ROW_H) + 'px"></div>';
         }
@@ -709,14 +721,19 @@
 
     function renderDay() {
       document.getElementById('dayViewDate').textContent = formatDisplayDate(selectedDate);
-      var key = formatDateKey(selectedDate);
-      var events = getEventsForDate(key);
+      var events = getEventsForDate(formatDateKey(selectedDate));
       var list = document.getElementById('dayEventsList');
       if (events.length === 0) {
         list.innerHTML = '<div class="empty-state"><p>予定はありません</p><p style="font-size:13px">右下の＋で追加できます</p></div>';
         return;
       }
-      list.innerHTML = events.map(function(ev) { return eventCardHtml(ev, true); }).join('');
+      list.innerHTML = events.map(function(ev) {
+        return '<div class="swipe-wrap" data-id="' + ev.id + '">' +
+          '<div class="swipe-delete-bg">削除</div>' +
+          eventCardHtml(ev, true) +
+          '</div>';
+      }).join('');
+      setupSwipeHandlers();
     }
 
     function eventCardHtml(ev, showCopy) {
@@ -752,6 +769,71 @@
       window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address), '_blank');
     }
 
+    // ===== スワイプ削除 =====
+    function setupSwipeHandlers() {
+      document.querySelectorAll('#dayEventsList .swipe-wrap').forEach(function(wrap) {
+        var card = wrap.querySelector('.event-card');
+        if (!card) return;
+        card.style.transform = 'translateX(0)';
+
+        card.addEventListener('touchstart', function(e) {
+          if (e.touches.length !== 1) return;
+          // 他のカードを閉じる
+          document.querySelectorAll('#dayEventsList .event-card').forEach(function(c) {
+            if (c !== card) c.style.transform = 'translateX(0)';
+          });
+          swipeState.startX = e.touches[0].clientX;
+          swipeState.startY = e.touches[0].clientY;
+          swipeState.currentX = 0;
+          swipeState.activeCard = card;
+          swipeState.moved = false;
+          card.classList.add('swiping');
+        }, { passive: true });
+
+        card.addEventListener('touchmove', function(e) {
+          if (swipeState.activeCard !== card || e.touches.length !== 1) return;
+          var dx = e.touches[0].clientX - swipeState.startX;
+          var dy = e.touches[0].clientY - swipeState.startY;
+          if (!swipeState.moved && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+            swipeState.activeCard = null;
+            card.classList.remove('swiping');
+            return;
+          }
+          if (dx > 0) dx = 0;
+          if (dx < -100) dx = -100;
+          swipeState.currentX = dx;
+          if (Math.abs(dx) > 6) swipeState.moved = true;
+          card.style.transform = 'translateX(' + dx + 'px)';
+        }, { passive: true });
+
+        card.addEventListener('touchend', function() {
+          if (swipeState.activeCard !== card) return;
+          card.classList.remove('swiping');
+          if (swipeState.currentX < -50) {
+            card.style.transform = 'translateX(-88px)';
+          } else {
+            card.style.transform = 'translateX(0)';
+          }
+          swipeState.activeCard = null;
+        });
+
+        // 削除背景タップ
+        var bg = wrap.querySelector('.swipe-delete-bg');
+        bg.onclick = function(e) {
+          e.stopPropagation();
+          var id = wrap.getAttribute('data-id');
+          if (confirm('この予定を削除しますか？')) {
+            var events = getEvents().filter(function(ev) { return ev.id !== id; });
+            saveEvents(events);
+            renderDay();
+            if (currentView === 'month') renderMonth();
+          } else {
+            card.style.transform = 'translateX(0)';
+          }
+        };
+      });
+    }
+
     function openAddModal() {
       editingEventId = null;
       isCopying = false;
@@ -769,10 +851,8 @@
       renderMediaPreview();
       document.getElementById('modalOverlay').classList.add('active');
     }
-
     function openEditModal(id) {
-      var events = getEvents();
-      var ev = events.find(function(e) { return e.id === id; });
+      var ev = getEvents().find(function(e) { return e.id === id; });
       if (!ev) return;
       editingEventId = id;
       isCopying = false;
@@ -789,21 +869,15 @@
       renderMediaPreview();
       document.getElementById('modalOverlay').classList.add('active');
     }
-
     function openCopyModal(id) {
-      var events = getEvents();
-      var ev = events.find(function(e) { return e.id === id; });
+      var ev = getEvents().find(function(e) { return e.id === id; });
       if (!ev) return;
       editingEventId = null;
       isCopying = true;
-      // メディアはコピー（参照共有ではなく中身をコピー）
-      tempMedia = (ev.media || []).map(function(m) {
-        return { type: m.type, dataUrl: m.dataUrl };
-      });
+      tempMedia = (ev.media || []).map(function(m) { return { type: m.type, dataUrl: m.dataUrl }; });
       document.getElementById('modalTitle').textContent = '予定をコピー';
       document.querySelector('.modal-save').textContent = '追加';
       document.getElementById('deleteBtn').style.display = 'none';
-      // 日時以外を引き継ぎ、日付・時間はユーザーが再設定
       document.getElementById('eventDate').value = '';
       document.getElementById('eventTitle').value = ev.title || '';
       document.getElementById('eventStart').value = '09:00';
@@ -812,18 +886,13 @@
       document.getElementById('eventContent').value = ev.content || '';
       renderMediaPreview();
       document.getElementById('modalOverlay').classList.add('active');
-      // 日付入力にフォーカス
-      setTimeout(function() {
-        document.getElementById('eventDate').focus();
-      }, 300);
+      setTimeout(function() { document.getElementById('eventDate').focus(); }, 300);
     }
-
     function closeModal() {
       document.getElementById('modalOverlay').classList.remove('active');
       tempMedia = [];
       isCopying = false;
     }
-
     function saveEvent() {
       var title = document.getElementById('eventTitle').value.trim();
       var date = document.getElementById('eventDate').value;
@@ -845,29 +914,18 @@
         var idx = events.findIndex(function(e) { return e.id === editingEventId; });
         if (idx !== -1) {
           events[idx] = {
-            id: events[idx].id,
-            date: date,
-            title: title,
-            start: start,
-            end: end,
-            address: address,
-            content: content,
-            media: tempMedia
+            id: events[idx].id, date: date, title: title, start: start, end: end,
+            address: address, content: content, media: tempMedia
           };
         }
       } else {
         events.push({
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-          date: date,
-          title: title,
-          start: start,
-          end: end,
-          address: address,
-          content: content,
-          media: tempMedia
+          date: date, title: title, start: start, end: end,
+          address: address, content: content, media: tempMedia
         });
       }
-      if (!saveEvents(events)) return; // 容量エラー時は閉じない
+      if (!saveEvents(events)) return;
       closeModal();
       if (currentView === 'month') renderMonth();
       else if (currentView === 'week') renderWeek();
@@ -876,7 +934,6 @@
         renderDay();
       }
     }
-
     function deleteEvent() {
       if (!confirm('この予定を削除しますか？')) return;
       var events = getEvents().filter(function(e) { return e.id !== editingEventId; });
@@ -887,14 +944,38 @@
       else renderDay();
     }
 
-    // ===== 画像圧縮 =====
+    // ===== 端末保存 =====
+    function saveDataUrlToDevice(dataUrl, filename) {
+      try {
+        var a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = filename || ('schedule_' + Date.now() + (dataUrl.indexOf('video') >= 0 || dataUrl.indexOf('mp4') >= 0 ? '.mp4' : '.jpg'));
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() { document.body.removeChild(a); }, 200);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+    function saveCurrentLightboxToDevice() {
+      if (!currentLightboxItem) return;
+      var ext = currentLightboxItem.type === 'video' ? '.mp4' : '.jpg';
+      var name = 'schedule_' + (currentLightboxItem.date || '') + '_' + Date.now() + ext;
+      if (saveDataUrlToDevice(currentLightboxItem.dataUrl, name)) {
+        // iOSなどでは「写真に追加」などの選択肢が出ることがある
+      } else {
+        alert('端末への保存に失敗しました');
+      }
+    }
+
     function compressImage(file, maxSize, quality) {
       return new Promise(function(resolve, reject) {
         if (!file.type.startsWith('image/')) {
-          // 動画はそのまま（ただしサイズ制限は呼び出し側）
           var reader = new FileReader();
           reader.onload = function(ev) {
-            resolve({ type: 'video', dataUrl: ev.target.result });
+            resolve({ type: 'video', dataUrl: ev.target.result, originalFile: file });
           };
           reader.onerror = reject;
           reader.readAsDataURL(file);
@@ -904,21 +985,14 @@
         var url = URL.createObjectURL(file);
         img.onload = function() {
           URL.revokeObjectURL(url);
-          var w = img.width;
-          var h = img.height;
-          var scale = 1;
-          if (w > maxSize || h > maxSize) {
-            scale = Math.min(maxSize / w, maxSize / h);
-          }
-          var cw = Math.round(w * scale);
-          var ch = Math.round(h * scale);
+          var w = img.width, h = img.height, scale = 1;
+          if (w > maxSize || h > maxSize) scale = Math.min(maxSize / w, maxSize / h);
+          var cw = Math.round(w * scale), ch = Math.round(h * scale);
           var canvas = document.createElement('canvas');
-          canvas.width = cw;
-          canvas.height = ch;
-          var ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, cw, ch);
+          canvas.width = cw; canvas.height = ch;
+          canvas.getContext('2d').drawImage(img, 0, 0, cw, ch);
           var dataUrl = canvas.toDataURL('image/jpeg', quality);
-          resolve({ type: 'image', dataUrl: dataUrl });
+          resolve({ type: 'image', dataUrl: dataUrl, originalFile: file });
         };
         img.onerror = function() {
           URL.revokeObjectURL(url);
@@ -950,9 +1024,9 @@
     function handleFiles(e) {
       var files = Array.from(e.target.files || []);
       if (!files.length) return;
+      // カメラ撮影（capture）の場合、多くの端末では既にカメラロールに保存されている
       files.forEach(function(file) {
         if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return;
-        // 動画は 3MB まで、画像は圧縮するので一旦 15MB まで許可
         var limit = file.type.startsWith('video/') ? 3 * 1024 * 1024 : 15 * 1024 * 1024;
         if (file.size > limit) {
           alert(file.type.startsWith('video/')
@@ -961,8 +1035,15 @@
           return;
         }
         compressImage(file, 1280, 0.7).then(function(item) {
-          tempMedia.push(item);
+          tempMedia.push({ type: item.type, dataUrl: item.dataUrl });
           renderMediaPreview();
+          // 端末へも保存を試みる（ダウンロード経由）
+          // カメラ撮影時は OS が既にカメラフォルダへ保存している場合が多い
+          // ギャラリー選択・圧縮後も端末に残したい場合にダウンロードを実行
+          var ext = item.type === 'video' ? '.mp4' : '.jpg';
+          var fname = 'schedule_' + formatDateKey(new Date()) + '_' + Date.now() + ext;
+          // カメラ capture でも圧縮版を端末に残すため保存を試みる
+          saveDataUrlToDevice(item.dataUrl, fname);
         }).catch(function(err) {
           alert(err.message || 'ファイルの読み込みに失敗しました');
         });
@@ -980,16 +1061,12 @@
       }).join('');
       preview.querySelectorAll('.media-remove').forEach(function(btn) {
         btn.onclick = function() {
-          removeMedia(parseInt(btn.getAttribute('data-index'), 10));
+          tempMedia.splice(parseInt(btn.getAttribute('data-index'), 10), 1);
+          renderMediaPreview();
         };
       });
     }
-    function removeMedia(index) {
-      tempMedia.splice(index, 1);
-      renderMediaPreview();
-    }
 
-    // ===== ギャラリー =====
     function openGallery() {
       galleryMode = 'date';
       document.querySelectorAll('.gallery-tab').forEach(function(t) {
@@ -1009,17 +1086,12 @@
       renderGallery();
     }
     function collectAllMedia() {
-      var events = getEvents();
       var items = [];
-      events.forEach(function(ev) {
-        (ev.media || []).forEach(function(m, idx) {
+      getEvents().forEach(function(ev) {
+        (ev.media || []).forEach(function(m) {
           items.push({
-            type: m.type,
-            dataUrl: m.dataUrl,
-            date: ev.date,
-            title: ev.title || '無題',
-            eventId: ev.id,
-            mediaIndex: idx
+            type: m.type, dataUrl: m.dataUrl,
+            date: ev.date, title: ev.title || '無題', eventId: ev.id
           });
         });
       });
@@ -1033,79 +1105,63 @@
         return;
       }
       var groups = {};
-      if (galleryMode === 'date') {
-        items.forEach(function(it) {
-          var k = it.date || '不明';
-          if (!groups[k]) groups[k] = [];
-          groups[k].push(it);
-        });
-      } else {
-        items.forEach(function(it) {
-          var k = it.title || '無題';
-          if (!groups[k]) groups[k] = [];
-          groups[k].push(it);
-        });
-      }
+      items.forEach(function(it) {
+        var k = galleryMode === 'date' ? (it.date || '不明') : (it.title || '無題');
+        if (!groups[k]) groups[k] = [];
+        groups[k].push(it);
+      });
       var keys = Object.keys(groups).sort(function(a, b) {
-        if (galleryMode === 'date') return b.localeCompare(a); // 新しい日付が上
-        return a.localeCompare(b);
+        return galleryMode === 'date' ? b.localeCompare(a) : a.localeCompare(b);
       });
       var html = '';
       keys.forEach(function(key) {
         var list = groups[key];
         var label = key;
         if (galleryMode === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(key)) {
-          var parts = key.split('-');
-          label = parseInt(parts[1], 10) + '月' + parseInt(parts[2], 10) + '日';
+          var p = key.split('-');
+          label = parseInt(p[1], 10) + '月' + parseInt(p[2], 10) + '日';
         }
-        html += '<div class="gallery-group">' +
-          '<div class="gallery-group-title">' + escapeHtml(label) +
-          ' <span class="count">' + list.length + '件</span></div>' +
-          '<div class="gallery-grid">';
-        list.forEach(function(it, i) {
-          var dataIdx = items.indexOf(it);
-          html += '<div class="gallery-item" data-gidx="' + dataIdx + '">' +
+        html += '<div class="gallery-group"><div class="gallery-group-title">' +
+          escapeHtml(label) + ' <span class="count">' + list.length + '件</span></div><div class="gallery-grid">';
+        list.forEach(function(it) {
+          var gidx = items.indexOf(it);
+          html += '<div class="gallery-item" data-gidx="' + gidx + '">' +
             (it.type === 'image'
               ? '<img src="' + it.dataUrl + '" alt="" loading="lazy">'
-              : '<video src="' + it.dataUrl + '" muted></video>') +
+              : '<video src="' + it.dataUrl + '" muted></video><span class="vid-badge">動画</span>') +
             '</div>';
         });
         html += '</div></div>';
       });
       body.innerHTML = html;
-      // クリックでライトボックス
-      var allItems = collectAllMedia();
+      var allItems = items;
       body.querySelectorAll('.gallery-item').forEach(function(el) {
         el.onclick = function() {
-          var idx = parseInt(el.getAttribute('data-gidx'), 10);
-          var it = allItems[idx];
-          if (!it) return;
-          openLightbox(it);
+          var it = allItems[parseInt(el.getAttribute('data-gidx'), 10)];
+          if (it) openLightbox(it);
         };
       });
     }
     function openLightbox(item) {
+      currentLightboxItem = item;
       var content = document.getElementById('lightboxContent');
-      var info = document.getElementById('lightboxInfo');
-      if (item.type === 'image') {
-        content.innerHTML = '<img src="' + item.dataUrl + '" alt="">';
-      } else {
-        content.innerHTML = '<video src="' + item.dataUrl + '" controls autoplay></video>';
-      }
+      if (item.type === 'image') content.innerHTML = '<img src="' + item.dataUrl + '" alt="">';
+      else content.innerHTML = '<video src="' + item.dataUrl + '" controls autoplay></video>';
       var dateLabel = item.date || '';
       if (/^\d{4}-\d{2}-\d{2}$/.test(dateLabel)) {
         var p = dateLabel.split('-');
         dateLabel = p[0] + '年' + parseInt(p[1], 10) + '月' + parseInt(p[2], 10) + '日';
       }
-      info.textContent = (item.title || '無題') + (dateLabel ? '  ·  ' + dateLabel : '');
+      document.getElementById('lightboxInfo').textContent =
+        (item.title || '無題') + (dateLabel ? '  ·  ' + dateLabel : '');
       document.getElementById('lightbox').classList.add('active');
     }
     function closeLightbox() {
       document.getElementById('lightbox').classList.remove('active');
       document.getElementById('lightboxContent').innerHTML = '';
+      currentLightboxItem = null;
     }
 
-    // イベント委譲
     document.addEventListener('click', function(e) {
       var copyBtn = e.target.closest('.copy-btn');
       if (copyBtn) {
@@ -1113,8 +1169,15 @@
         openCopyModal(copyBtn.getAttribute('data-id'));
         return;
       }
+      // スワイプ中のカードクリックは無視（削除ボタン優先）
       var card = e.target.closest('.event-card');
       if (card && !e.target.closest('.event-address') && !e.target.closest('.copy-btn')) {
+        var tx = card.style.transform || '';
+        if (tx.indexOf('-88') >= 0 || tx.indexOf('-8') >= 0) {
+          // 開いている場合は閉じるだけ
+          card.style.transform = 'translateX(0)';
+          return;
+        }
         openEditModal(card.getAttribute('data-id'));
         return;
       }
