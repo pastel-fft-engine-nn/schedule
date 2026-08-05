@@ -129,7 +129,17 @@
     .event-card:active { /* scale handled carefully with swipe */ }
     .event-time { font-size: 13px; color: #8e8e93; margin-bottom: 4px; }
     .event-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; padding-right: 60px; }
-    .event-address { font-size: 14px; color: #007aff; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+    .event-address {
+      font-size: 14px; color: #007aff; margin-bottom: 2px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .event-address .addr-text { flex: 1; min-width: 0; word-break: break-all; }
+    .addr-copy-btn {
+      flex-shrink: 0; border: none; background: #f2f2f7; color: #007aff;
+      font-size: 11px; font-weight: 500; padding: 4px 8px; border-radius: 6px; cursor: pointer;
+    }
+    .addr-copy-btn:active { background: #e5e5ea; }
+    .addr-copy-btn.copied { background: #e8f5e9; color: #34c759; }
     .event-content { font-size: 14px; color: #3a3a3c; margin-top: 6px; line-height: 1.4; }
     .event-media { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; }
     .event-media img, .event-media video {
@@ -775,7 +785,10 @@
         return '<video src="' + m.dataUrl + '" muted></video>';
       }).join('');
       var addressHtml = ev.address
-        ? '<div class="event-address" data-address="' + escapeAttr(ev.address) + '">📍 ' + escapeHtml(ev.address) + '</div>'
+        ? '<div class="event-address" data-address="' + escapeAttr(ev.address) + '">' +
+          '<span class="addr-text">📍 ' + escapeHtml(ev.address) + '</span>' +
+          '<button type="button" class="addr-copy-btn" data-address="' + escapeAttr(ev.address) + '">コピー</button>' +
+          '</div>'
         : '';
       var copyHtml = showCopy
         ? '<button type="button" class="copy-btn" data-id="' + ev.id + '">コピー</button>'
@@ -800,6 +813,37 @@
     }
     var pendingMapAddress = '';
 
+    function copyAddressToClipboard(text, btn) {
+      if (!text) return;
+      function ok() {
+        if (btn) {
+          var prev = btn.textContent;
+          btn.textContent = 'コピー済み';
+          btn.classList.add('copied');
+          setTimeout(function() {
+            btn.textContent = prev || 'コピー';
+            btn.classList.remove('copied');
+          }, 1500);
+        }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok).catch(function() {
+          fallbackCopy(text); ok();
+        });
+      } else {
+        fallbackCopy(text); ok();
+      }
+    }
+    function fallbackCopy(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    }
     function openMaps(address) {
       if (!address) return;
       pendingMapAddress = address;
@@ -1344,7 +1388,7 @@
       }
       // スワイプ中のカードクリックは無視（削除ボタン優先）
       var card = e.target.closest('.event-card');
-      if (card && !e.target.closest('.event-address') && !e.target.closest('.copy-btn')) {
+      if (card && !e.target.closest('.event-address') && !e.target.closest('.copy-btn') && !e.target.closest('.addr-copy-btn')) {
         var tx = card.style.transform || '';
         if (tx.indexOf('-88') >= 0 || tx.indexOf('-8') >= 0) {
           // 開いている場合は閉じるだけ
@@ -1354,8 +1398,15 @@
         openEditModal(card.getAttribute('data-id'));
         return;
       }
+      var addrCopy = e.target.closest('.addr-copy-btn');
+      if (addrCopy) {
+        e.stopPropagation();
+        var text = addrCopy.getAttribute('data-address') || '';
+        copyAddressToClipboard(text, addrCopy);
+        return;
+      }
       var addr = e.target.closest('.event-address');
-      if (addr) {
+      if (addr && !e.target.closest('.addr-copy-btn')) {
         e.stopPropagation();
         openMaps(addr.getAttribute('data-address'));
       }
